@@ -1,0 +1,59 @@
+{
+  "name": "cw",
+  "version": "0.1.0",
+  "description": "Deterministic contracts and independent verification for AI-assisted code changes",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "cw": "./dist/cli/index.js",
+    "cyclewarden": "./dist/cli/index.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "ai",
+    "agent",
+    "governance",
+    "verification",
+    "coding-agent",
+    "cli",
+    "deterministic",
+    "contracts",
+    "guardrails"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Thunderkill016/cw.git"
+  },
+  "homepage": "https://github.com/Thunderkill016/cw#readme",
+  "bugs": {
+    "url": "https://github.com/Thunderkill016/cw/issues"
+  },
+  "scripts": {
+    "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
+    "typecheck": "tsc --noEmit",
+    "build": "npm run clean && tsc -p tsconfig.build.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "20.19.43",
+    "typescript": "5.9.3",
+    "vitest": "4.1.10"
+  }
+}

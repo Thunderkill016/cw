@@ -1,0 +1,8 @@
+node_modules/
+dist/
+*.tgz
+.cw/
+.cyclewarden/
+.env
+.env.*
+!.env.example
