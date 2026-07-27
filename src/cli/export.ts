@@ -4,6 +4,7 @@ import { readdir, readFile, writeFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import type { CliOutput } from "./index.js";
 import { green } from "./index.js";
+import { formatSlsaProvenance } from "../core/slsa.js";
 import { computeMerkleRoot, type MerkleEntry } from "../core/merkle.js";
 
 const CW_STATE_DIR = ".cw";
@@ -13,6 +14,7 @@ export async function runExport(argv: string[], io: CliOutput): Promise<number> 
     args: argv,
     options: {
       out: { type: "string" },
+      slsa: { type: "boolean" },
     },
     strict: true,
   });
@@ -55,7 +57,8 @@ export async function runExport(argv: string[], io: CliOutput): Promise<number> 
           contracts.push(JSON.parse(content));
           merkleEntries.push({ path: relPath, hash });
         } else if (entry.name.startsWith("verification-") && entry.name.endsWith(".json")) {
-          evidence.push(JSON.parse(content));
+          const parsed = JSON.parse(content);
+          evidence.push(options.slsa ? formatSlsaProvenance(parsed) : parsed);
           merkleEntries.push({ path: relPath, hash });
         }
       }

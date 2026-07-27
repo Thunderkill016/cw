@@ -12,6 +12,7 @@ import { runWatch } from "./watch.js";
 import { runReport } from "./report.js";
 import { runClean } from "./clean.js";
 import { runExport } from "./export.js";
+import { runMap } from "./map.js";
 
 const VERSION = "0.1.0";
 
@@ -23,6 +24,7 @@ Usage:
   cw verify  --contract <contract.json> Verify an AI implementation against contract
   cw show    --file <record.json>      Inspect a contract or evidence record
   cw diff    --contract <contract.json> Evaluate Git tree changes against baseSha
+  cw map                               Generate a context map of repository symbols
   cw list                              List all task contracts and verifications
   cw report                            Generate a compliance report of all tasks
   cw export                            Export contracts and evidence to a bundle
@@ -114,6 +116,8 @@ async function main(): Promise<number> {
         return await runList(commandArgs, io);
       case "diff":
         return await runDiff(commandArgs, io);
+      case "map":
+        return await runMap(commandArgs, io);
       case "export":
         return await runExport(commandArgs, io);
       case "watch":

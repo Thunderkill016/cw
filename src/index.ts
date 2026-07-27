@@ -21,6 +21,7 @@ export type {
 } from "./core/contract.js";
 
 export { verifyChange, verificationEvidenceDigest, scopeViolations, parseRawGitChanges } from "./core/verification.js";
+export { formatSlsaProvenance } from "./core/slsa.js";
 export type {
   VerifyChangeInput,
   VerificationEvidenceV1,
@@ -101,3 +102,6 @@ export type { ConsensusVerdict, ConsensusResult } from "./core/consensus.js";
 
 export { extractDependencies, checkDependencyLeaks } from "./core/ast-boundary.js";
 export type { DependencyLeak } from "./core/ast-boundary.js";
+
+export { generateRepoMap } from "./core/repo-map.js";
+export type { RepoMapNode, RepoMapResult } from "./core/repo-map.js";
