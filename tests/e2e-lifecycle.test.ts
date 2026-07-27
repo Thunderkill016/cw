@@ -12,8 +12,11 @@ const temporaryRoots: string[] = [];
 const cliPath = join(process.cwd(), "dist/cli/index.js");
 
 beforeAll(async () => {
-  // Ensure the CLI is built
-  await execFileAsync("npm", ["run", "build"], { cwd: process.cwd() });
+  try {
+    await stat(cliPath);
+  } catch {
+    await execFileAsync("npm", ["run", "build"], { cwd: process.cwd() });
+  }
 });
 
 afterEach(async () => {
