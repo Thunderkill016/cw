@@ -10,3 +10,5 @@ task-healthcheck.json
 assessment-healthcheck.json
 task-watch-command.json
 assessment-watch.json
+task-watch-complete.json
+assessment-watch-complete.json
