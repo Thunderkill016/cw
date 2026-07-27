@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { resolve } from "node:path";
 import { runInit } from "./init.js";
 import { runPrepare } from "./prepare.js";
 import { runVerify } from "./verify.js";
@@ -121,9 +122,13 @@ async function main(): Promise<number> {
   }
 }
 
-main()
-  .then((code) => process.exit(code))
-  .catch((error) => {
-    process.stderr.write(`Fatal: ${error instanceof Error ? error.message : String(error)}\n`);
-    process.exit(1);
-  });
+import { fileURLToPath } from "node:url";
+
+if (process.argv[1] && resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url))) {
+  main()
+    .then((code) => process.exit(code))
+    .catch((error) => {
+      process.stderr.write(`Fatal: ${error instanceof Error ? error.message : String(error)}\n`);
+      process.exit(1);
+    });
+}
