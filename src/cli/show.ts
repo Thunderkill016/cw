@@ -1,5 +1,6 @@
 import { readFile, stat } from "node:fs/promises";
 import { resolve } from "node:path";
+import { parseArgs } from "node:util";
 import { parseTaskContract } from "../core/contract.js";
 import { verificationEvidenceDigest } from "../core/verification.js";
 import { canonicalJsonDocument } from "../core/integrity.js";
@@ -16,22 +17,6 @@ async function readJson(path: string): Promise<unknown> {
   return JSON.parse(await readFile(path, "utf8")) as unknown;
 }
 
-function parseCliArgs(argv: string[]): Map<string, string> {
-  const options = new Map<string, string>();
-  for (let i = 0; i < argv.length; i++) {
-    const token = argv[i];
-    if (!token?.startsWith("--")) continue;
-    const key = token.slice(2);
-    const next = argv[i + 1];
-    if (next && !next.startsWith("--")) {
-      options.set(key, next);
-      i++;
-    } else {
-      options.set(key, "true");
-    }
-  }
-  return options;
-}
 
 function validateEvidenceForShow(value: unknown): VerificationEvidenceV1 {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
@@ -53,10 +38,18 @@ function validateEvidenceForShow(value: unknown): VerificationEvidenceV1 {
 }
 
 export async function runShow(argv: string[], io: CliOutput): Promise<number> {
-  const options = parseCliArgs(argv);
-  const jsonMode = options.has("json");
+  const { values: options } = parseArgs({
+    args: argv,
+    options: {
+      json: { type: "boolean" },
+      file: { type: "string" },
+    },
+    strict: true,
+  });
 
-  const filePath = options.get("file");
+  const jsonMode = options.json ?? false;
+
+  const filePath = options.file;
   if (!filePath) throw new Error("--file <contract-or-evidence.json> is required");
 
   const value = await readJson(resolve(filePath));

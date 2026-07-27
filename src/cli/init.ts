@@ -1,16 +1,21 @@
 import { mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
+import { parseArgs } from "node:util";
 import type { CliOutput } from "./index.js";
 import { bold, green } from "./index.js";
 
 const CW_STATE_DIR = ".cw";
 
-export async function runInit(args: string[], io: CliOutput): Promise<number> {
-  if (args.length > 0 && args[0] !== "--json") {
-    throw new Error("init does not accept arguments");
-  }
+export async function runInit(argv: string[], io: CliOutput): Promise<number> {
+  const { values: options } = parseArgs({
+    args: argv,
+    options: {
+      json: { type: "boolean" },
+    },
+    strict: true,
+  });
 
-  const jsonMode = args.includes("--json");
+  const jsonMode = options.json ?? false;
   const projectRoot = process.cwd();
   const stateDir = resolve(projectRoot, CW_STATE_DIR);
 
