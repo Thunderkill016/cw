@@ -305,6 +305,11 @@ export async function verifyChange(input: VerifyChangeInput): Promise<Verificati
     throw new ChangeVerificationError("contract base commit is not an ancestor of the requested head");
   }
 
+  // COUPLING NOTE: `--no-renames` is mandatory here.
+  // `parseRawGitChanges` expects every NUL-delimited record to be a (header, path) pair.
+  // Without `--no-renames`, Git emits a (header, old-path, new-path) triple for renames,
+  // which would silently break the `parts.length % 2 !== 0` check and produce wrong paths.
+  // If you ever remove `--no-renames`, you MUST update `parseRawGitChanges` to handle triples.
   const rawChanges = await runGitBuffer(repositoryRoot, [
     "diff-tree",
     "-r",
@@ -317,6 +322,7 @@ export async function verifyChange(input: VerifyChangeInput): Promise<Verificati
     headSha,
     "--",
   ]);
+
   const changes = parseRawGitChanges(rawChanges, actualFormat);
   const changeSetDigest = digestCanonicalJson(CHANGE_SET_DIGEST_DOMAIN, {
     objectFormat: actualFormat,

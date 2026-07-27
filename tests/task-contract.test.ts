@@ -52,7 +52,7 @@ function draft(overrides: Record<string, unknown> = {}) {
       {
         id: "result",
         executable: process.execPath,
-        arguments: ["-e", "process.exit(0)"],
+        arguments: ["--version"],
         relativeWorkingDirectory: ".",
         timeoutMs: 10_000,
         maxOutputBytes: 16_384,

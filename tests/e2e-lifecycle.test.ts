@@ -83,7 +83,7 @@ describe("CLI E2E Lifecycle", () => {
         {
           id: "build-pass",
           executable: "node",
-          arguments: ["-e", "process.exit(0)"],
+          arguments: ["--version"],
           relativeWorkingDirectory: ".",
           timeoutMs: 1000,
           maxOutputBytes: 1024

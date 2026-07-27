@@ -39,10 +39,12 @@ async function createRepository(name: string): Promise<string> {
   return root;
 }
 
-function contractDraft(
-  verificationSource = "process.exit(0)",
-  maxOutputBytes = 16_384
-) {
+// Name of the helper script committed into the test repository root.
+// We use a script file instead of `node -e` because the bounded-command sandbox
+// now blocks eval-mode flags (-e, --eval, -c) on interpreter executables.
+const VERIFY_SCRIPT_NAME = "_test-verify.js";
+
+function contractDraft(maxOutputBytes = 16_384) {
   return {
     schemaVersion: 1,
     taskId: "task-verify",
@@ -57,7 +59,7 @@ function contractDraft(
       {
         id: "fixture-check",
         executable: process.execPath,
-        arguments: ["-e", verificationSource],
+        arguments: [VERIFY_SCRIPT_NAME],
         relativeWorkingDirectory: ".",
         timeoutMs: 10_000,
         maxOutputBytes,
@@ -66,19 +68,27 @@ function contractDraft(
   };
 }
 
+
 async function prepare(
   root: string,
-  verificationSource?: string,
+  verificationSource = "process.exit(0)",
   maxOutputBytes?: number
 ): Promise<TaskContractV1> {
+  // Write the JS source to a script file and commit it as part of the base.
+  // This avoids `node -e` (now blocked by the sandbox eval-flag guard) while
+  // preserving dynamic injection of verification behaviour into each test.
+  await writeFile(join(root, VERIFY_SCRIPT_NAME), verificationSource, "utf8");
+  await git(root, ["add", VERIFY_SCRIPT_NAME]);
+  await git(root, ["commit", "-m", "add test verification script"]);
   return await prepareTaskContract({
     repositoryRoot: root,
     stateRoot: join(root, ".cyclewarden"),
-    draft: contractDraft(verificationSource, maxOutputBytes),
+    draft: contractDraft(maxOutputBytes),
     preparedBy: "owner+codex",
     preparedAt: "2026-07-26T00:00:00.000Z",
   });
 }
+
 
 function assessment(
   contract: TaskContractV1,

@@ -89,6 +89,14 @@ export async function runVerify(argv: string[], io: CliOutput): Promise<number> 
     ? await readJson(resolve(projectRoot, rawAssessment))
     : undefined;
 
+  // Emit progress so the user knows verification is running.
+  // Bounded commands can take up to MAX_TIMEOUT_MS (30 min); without this message
+  // the CLI would appear frozen during long build or test runs.
+  if (!jsonMode) {
+    io.stderr(`Running verification for task: ${contract.taskId} …\n`);
+    io.stderr(`  Commands: ${contract.verificationCommands.map((c) => c.id).join(", ") || "(none)"}\n`);
+  }
+
   const evidence = await verifyChange({
     repositoryRoot: projectRoot,
     stateRoot: stateDir,

@@ -20,6 +20,48 @@ const SHELL_EXECUTABLES = new Set([
   "pwsh.exe",
 ]);
 
+/**
+ * Interpreters that support arbitrary code execution via flags like -e or -c.
+ * When the executable is one of these, we also block known eval-mode flags to
+ * prevent sandbox bypass patterns such as `node -e "require('fs')..."` or
+ * `python -c "import os; os.system(...)"` from being embedded in contracts.
+ */
+const INTERPRETER_EXECUTABLES = new Set([
+  "node",
+  "nodejs",
+  "deno",
+  "bun",
+  "python",
+  "python3",
+  "python2",
+  "perl",
+  "perl5",
+  "ruby",
+  "ruby3",
+  "awk",
+  "gawk",
+  "mawk",
+  "lua",
+  "lua5",
+  "tclsh",
+  "wish",
+  "groovy",
+  "jruby",
+]);
+
+/**
+ * Flags that cause an interpreter to execute a string as code rather than
+ * reading from a file. These are blocked when the executable is an interpreter
+ * to prevent inline code-execution bypass of the bounded-command sandbox.
+ */
+const EVAL_FLAGS = new Set([
+  "-e", "--eval", "-e:",
+  "-c", "--cmd",
+  "-script", "--script",
+  "--input-string", "-p",
+  "eval", "--code",
+]);
+
 export class BoundedCommandError extends Error {
   constructor(message: string) {
     super(message);
@@ -115,6 +157,18 @@ export function parseBoundedCommand(value: unknown, label = "command"): BoundedC
   if (SHELL_EXECUTABLES.has(basename(executable).toLowerCase())) {
     throw new BoundedCommandError(`${label}.executable may not invoke a command shell`);
   }
+  // Block interpreter eval-mode flags to prevent sandbox bypass (e.g. `node -e`, `python -c`).
+  // INTERPRETER_EXECUTABLES + EVAL_FLAGS work together: if the binary is an interpreter and
+  // its first argument is an eval flag, we reject the command to close the bypass surface.
+  if (
+    INTERPRETER_EXECUTABLES.has(basename(executable).toLowerCase()) &&
+    Array.isArray(record.arguments) &&
+    record.arguments.some((arg) => typeof arg === "string" && EVAL_FLAGS.has(arg.toLowerCase()))
+  ) {
+    throw new BoundedCommandError(
+      `${label}.arguments may not use eval-mode flags with an interpreter executable (e.g. node -e, python -c)`
+    );
+  }
   if (!Array.isArray(record.arguments) || record.arguments.some((item) => typeof item !== "string")) {
     throw new BoundedCommandError(`${label}.arguments must be an array of strings`);
   }
@@ -165,6 +219,14 @@ function redact(value: string): string {
     );
 }
 
+/**
+ * Maximum byte length of a secret token that could appear at the truncation
+ * boundary. We strip this many trailing bytes from truncated previews to ensure
+ * that a partial secret token at the boundary is never exposed in evidence logs.
+ * 512 bytes covers all common token formats (GitHub, OpenAI, AWS, etc.).
+ */
+const REDACTION_SAFETY_MARGIN = 512;
+
 function outputCollector(previewLimit: number) {
   const hash = createHash("sha256");
   const previewChunks: Buffer[] = [];
@@ -185,10 +247,21 @@ function outputCollector(previewLimit: number) {
       if (buffer.byteLength > remaining) truncated = true;
     },
     finish(): BoundedOutputEvidence {
+      let previewBuffer = Buffer.concat(previewChunks);
+      // When output was truncated, strip a trailing safety margin to prevent
+      // partial secret tokens that span the truncation boundary from leaking
+      // into the preview. A token fragment that doesn't match the full regex
+      // pattern would otherwise survive the redact() pass below.
+      if (truncated && previewBuffer.byteLength > REDACTION_SAFETY_MARGIN) {
+        previewBuffer = previewBuffer.subarray(
+          0,
+          previewBuffer.byteLength - REDACTION_SAFETY_MARGIN
+        );
+      }
       return {
         digest: hash.digest("hex"),
         byteLength,
-        preview: redact(Buffer.concat(previewChunks).toString("utf8")),
+        preview: redact(previewBuffer.toString("utf8")),
         previewTruncated: truncated,
       };
     },
