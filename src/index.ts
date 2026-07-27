@@ -71,3 +71,18 @@ export {
 export type { GitObjectFormat } from "./git/git-change.js";
 
 export { resolveDefaultStateRoot } from "./store/runtime-paths.js";
+
+export {
+  isValidTransition,
+  advanceState,
+  isTerminalState,
+  StateMachineError,
+} from "./core/state-machine.js";
+export type { TaskState } from "./core/state-machine.js";
+
+export {
+  writeAtomicJson,
+  resolveCycleStateDir,
+  persistCycleMetadata,
+  PersistenceError,
+} from "./store/persistence.js";

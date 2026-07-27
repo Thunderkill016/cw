@@ -4,6 +4,9 @@ import { runInit } from "./init.js";
 import { runPrepare } from "./prepare.js";
 import { runVerify } from "./verify.js";
 import { runShow } from "./show.js";
+import { runStatus } from "./status.js";
+import { runList } from "./list.js";
+import { runDiff } from "./diff.js";
 
 const VERSION = "0.1.0";
 
@@ -14,6 +17,9 @@ Usage:
   cw prepare --spec <draft.json>       Create a deterministic task contract
   cw verify  --contract <contract.json> Verify an AI implementation against contract
   cw show    --file <record.json>      Inspect a contract or evidence record
+  cw diff    --contract <contract.json> Evaluate Git tree changes against baseSha
+  cw list                              List all task contracts and verifications
+  cw status                            Show a dashboard of tasks and their state
   cw help                              Show this help message
   cw version                           Show version
 
@@ -94,6 +100,12 @@ async function main(): Promise<number> {
         return await runVerify(commandArgs, io);
       case "show":
         return await runShow(commandArgs, io);
+      case "status":
+        return await runStatus(commandArgs, io);
+      case "list":
+        return await runList(commandArgs, io);
+      case "diff":
+        return await runDiff(commandArgs, io);
       default:
         io.stderr(`${red("Error:")} Unknown command: ${command}\n`);
         io.stderr(`Run ${bold("cw help")} for usage information.\n`);
