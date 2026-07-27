@@ -1,0 +1,28 @@
+name: CW Verify
+
+on:
+  workflow_call:
+    inputs:
+      contract-path:
+        description: 'Path to the contract JSON'
+        required: true
+        type: string
+      fail-on-inconclusive:
+        description: 'Whether to fail the CI if the verdict is inconclusive'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  verify:
+    name: Verify AI Implementation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run CW Verify
+        uses: Thunderkill016/cw/.github/actions/cw-verify@main
+        with:
+          contract-path: ${{ inputs.contract-path }}
+          fail-on-inconclusive: ${{ inputs.fail-on-inconclusive }}

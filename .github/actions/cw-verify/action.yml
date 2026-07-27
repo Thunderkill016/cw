@@ -1,0 +1,104 @@
+name: 'CW Verify'
+description: 'Verifies an AI implementation using CW'
+inputs:
+  contract-path:
+    description: 'Path to the contract JSON'
+    required: true
+  implementer-provider:
+    description: 'The provider of the implementation'
+    required: false
+    default: 'github-actions'
+  implementer-run:
+    description: 'The run ID for the implementer'
+    required: false
+    default: ${{ github.run_id }}
+  fail-on-inconclusive:
+    description: 'Whether to fail the CI if the verdict is inconclusive'
+    required: false
+    default: 'false'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Node.js 20
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+
+    - name: Run CW Verify
+      id: cw-verify
+      shell: bash
+      run: |
+        set +e
+        npx cw verify --contract "${{ inputs.contract-path }}" \
+          --implementer-provider "${{ inputs.implementer-provider }}" \
+          --implementer-run "${{ inputs.implementer-run }}" \
+          --trusted-repository \
+          --json > cw-result.json
+        
+        EXIT_CODE=$?
+        set -e
+        echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
+
+    - name: Post PR Comment
+      if: github.event_name == 'pull_request' && always()
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          if (!fs.existsSync('cw-result.json')) {
+            console.log('No cw-result.json found.');
+            return;
+          }
+          
+          try {
+            const result = JSON.parse(fs.readFileSync('cw-result.json', 'utf8'));
+            const evidence = result.evidence;
+            if (!evidence) return;
+            
+            let verdictIcon = '❔';
+            if (evidence.verdict === 'accepted') verdictIcon = '✅';
+            if (evidence.verdict === 'rejected') verdictIcon = '❌';
+            
+            const checksPassed = evidence.checks.length;
+            const risksCount = evidence.unresolvedRisks ? evidence.unresolvedRisks.length : 0;
+            
+            const body = `## CW Verification Result ${verdictIcon}
+            
+            **Verdict:** \`${evidence.verdict.toUpperCase()}\`
+            
+            - **Task ID:** \`${evidence.subject.taskId || 'Unknown'}\`
+            - **Scope Status:** \`${evidence.scope.status}\`
+            - **Changes:** ${evidence.subject.changes.length} files modified
+            - **Checks:** ${checksPassed} passed
+            - **Risks:** ${risksCount} unresolved
+            
+            *Verified by Cyclewarden (cw)*`;
+            
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+          } catch (e) {
+            console.error('Error posting comment:', e);
+          }
+
+    - name: Evaluate Outcome
+      shell: bash
+      run: |
+        EXIT_CODE="${{ steps.cw-verify.outputs.exit_code }}"
+        if [ "$EXIT_CODE" -eq 2 ]; then
+          echo "CW Verification REJECTED."
+          exit 1
+        elif [ "$EXIT_CODE" -eq 3 ] && [ "${{ inputs.fail-on-inconclusive }}" = "true" ]; then
+          echo "CW Verification INCONCLUSIVE."
+          exit 1
+        elif [ "$EXIT_CODE" -eq 0 ] || [ "$EXIT_CODE" -eq 3 ]; then
+          echo "CW Verification passed or inconclusive (allowed)."
+          exit 0
+        else
+          echo "CW CLI failed with exit code $EXIT_CODE."
+          exit 1
+        fi

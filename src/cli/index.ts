@@ -17,7 +17,7 @@ import { runMap } from "./map.js";
 import { runProvenance } from "./provenance.js";
 import { runAudit } from "./audit.js";
 
-const VERSION = "0.1.0";
+const VERSION = "0.2.0";
 
 const HELP = `cw — Deterministic contracts and independent verification for AI-assisted code changes
 
