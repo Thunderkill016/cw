@@ -9,6 +9,9 @@ import { runStatus } from "./status.js";
 import { runList } from "./list.js";
 import { runDiff } from "./diff.js";
 import { runWatch } from "./watch.js";
+import { runReport } from "./report.js";
+import { runClean } from "./clean.js";
+import { runExport } from "./export.js";
 
 const VERSION = "0.1.0";
 
@@ -21,7 +24,10 @@ Usage:
   cw show    --file <record.json>      Inspect a contract or evidence record
   cw diff    --contract <contract.json> Evaluate Git tree changes against baseSha
   cw list                              List all task contracts and verifications
+  cw report                            Generate a compliance report of all tasks
+  cw export                            Export contracts and evidence to a bundle
   cw status                            Show a dashboard of tasks and their state
+  cw clean                             Clean temporary files and rejected runs
   cw help                              Show this help message
   cw version                           Show version
 
@@ -108,8 +114,14 @@ async function main(): Promise<number> {
         return await runList(commandArgs, io);
       case "diff":
         return await runDiff(commandArgs, io);
+      case "export":
+        return await runExport(commandArgs, io);
       case "watch":
         return await runWatch(commandArgs, io);
+      case "report":
+        return await runReport(commandArgs, io);
+      case "clean":
+        return await runClean(commandArgs, io);
       default:
         io.stderr(`${red("Error:")} Unknown command: ${command}\n`);
         io.stderr(`Run ${bold("cw help")} for usage information.\n`);
