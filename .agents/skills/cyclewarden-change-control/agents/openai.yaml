@@ -1,0 +1,4 @@
+interface:
+  display_name: "CycleWarden Change Control"
+  short_description: "Prepare and independently verify AI changes"
+  default_prompt: "Use $cyclewarden-change-control to prepare and independently verify this repository change."

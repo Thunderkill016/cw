@@ -21,6 +21,11 @@
   },
   "files": [
     "dist/",
+    "presets/",
+    "prompts/",
+    "templates/",
+    ".agents/",
+    "docs/",
     "README.md",
     "LICENSE"
   ],
