@@ -8,3 +8,5 @@ dist/
 !.env.example
 task-healthcheck.json
 assessment-healthcheck.json
+task-watch-command.json
+assessment-watch.json
