@@ -7,3 +7,4 @@ dist/
 .env.*
 !.env.example
 task-healthcheck.json
+assessment-healthcheck.json
