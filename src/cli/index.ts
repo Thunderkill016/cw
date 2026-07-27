@@ -7,6 +7,7 @@ import { runShow } from "./show.js";
 import { runStatus } from "./status.js";
 import { runList } from "./list.js";
 import { runDiff } from "./diff.js";
+import { runWatch } from "./watch.js";
 
 const VERSION = "0.1.0";
 
@@ -106,6 +107,8 @@ async function main(): Promise<number> {
         return await runList(commandArgs, io);
       case "diff":
         return await runDiff(commandArgs, io);
+      case "watch":
+        return await runWatch(commandArgs, io);
       default:
         io.stderr(`${red("Error:")} Unknown command: ${command}\n`);
         io.stderr(`Run ${bold("cw help")} for usage information.\n`);
