@@ -2,6 +2,7 @@
 
 import { resolve } from "node:path";
 import { runInit } from "./init.js";
+import { runDoctor } from "./doctor.js";
 import { runPrepare } from "./prepare.js";
 import { runVerify } from "./verify.js";
 import { runShow } from "./show.js";
@@ -19,7 +20,8 @@ const VERSION = "0.1.0";
 const HELP = `cw — Deterministic contracts and independent verification for AI-assisted code changes
 
 Usage:
-  cw init                              Initialize CW in the current project
+  cw init                              Initialize CW in the current project (use --auto to detect project type)
+  cw doctor                            Check environment health and dependencies
   cw prepare --spec <draft.json>       Create a deterministic task contract
   cw verify  --contract <contract.json> Verify an AI implementation against contract
   cw show    --file <record.json>      Inspect a contract or evidence record
@@ -102,6 +104,8 @@ async function main(): Promise<number> {
 
   try {
     switch (command) {
+      case "doctor":
+        return await runDoctor(commandArgs, io);
       case "init":
         return await runInit(commandArgs, io);
       case "prepare":

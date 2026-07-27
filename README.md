@@ -1,161 +1,118 @@
-# cw
+# cw — Deterministic governance for AI-generated code
 
-**Deterministic contracts and independent verification for AI-assisted code changes.**
+![npm version](https://img.shields.io/npm/v/cw)
+![license](https://img.shields.io/npm/l/cw)
+![zero dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)
 
-`cw` is a zero-dependency CLI and TypeScript library that makes AI coding agents auditable and governable. It provides a cryptographic contract-and-evidence protocol that answers a simple question: *"Did the AI agent do exactly what it was asked to do, and nothing more?"*
+**cw (Cyclewarden)** is a zero-dependency CLI and TypeScript library that makes AI coding agents auditable and governable. It provides a cryptographic contract-and-evidence protocol that answers a simple question: *"Did the AI agent do exactly what it was asked to do, and nothing more?"*
 
-## Why?
+## Why CW?
 
-AI coding agents (Cursor, Copilot, Claude Code, Codex, etc.) can now write entire features. But how do you know:
+**The problem:** AI agents (Cursor, Copilot, SWE-agent) write code without accountability. They can modify files they shouldn't, introduce subtle regressions, or silently break system constraints. Existing tools focus on *writing* the code, not *verifying* its safety and compliance.
 
-- The agent only changed the files it was supposed to?
-- All acceptance criteria are actually met?
-- Your verification commands (lint, test, typecheck) pass on the final result?
-- No unauthorized side effects were introduced?
+**The solution:** Deterministic contracts + cryptographic verification. CW enforces boundaries by explicitly contracting what an AI is allowed to do, and then independently verifying the outcome.
 
-`cw` solves this with **deterministic task contracts** and **independent verification evidence**.
+**Unique value:**
+- **Zero-trust verification:** Verification commands run in a clean, observable environment that detects side-effects and unauthorized scope changes.
+- **Cryptographic integrity:** Every contract and verification produces a cryptographically signed evidence record linked to specific Git SHAs.
+- **Agent-agnostic:** Works with any tool—whether it's Cursor, Aider, Claude Code, or an autonomous backend script.
+- **Zero dependencies:** Built purely on Node.js and Git internals for maximum stability and minimal supply chain risk.
 
 ## Quick Start
 
 ```bash
-# Install
-npm install -g cw
-
-# Initialize in your project
-cw init
-
-# Create a task contract
-cw prepare --spec task.json
+# Initialize CW in your project
+npx cw init --auto
 
 # Let your AI agent implement the task...
 
-# Verify the implementation
-cw verify --contract .cw/tasks/my-task/contract.json \
-  --implementer-provider cursor \
-  --implementer-run session-abc \
-  --trusted-repository
+# Verify the implementation against the contract
+npx cw verify --contract .cw/tasks/<id>/contract.json
 ```
 
 ## How It Works
 
-### 1. Prepare a Contract
-
-Define what the AI agent should do with a task spec:
-
-```json
-{
-  "taskId": "add-login-page",
-  "objective": "Add a login page with email/password authentication",
-  "allowedPaths": [
-    { "path": "src/pages/login/**" },
-    { "path": "src/components/auth/**" }
-  ],
-  "forbiddenPaths": [
-    { "path": ".env*" },
-    { "path": "src/config/secrets/**" }
-  ],
-  "acceptanceCriteria": [
-    { "id": "ac-1", "description": "Login form renders with email and password fields" },
-    { "id": "ac-2", "description": "Form validation rejects empty fields" }
-  ],
-  "verificationCommands": [
-    {
-      "id": "typecheck",
-      "executable": "npx",
-      "arguments": ["tsc", "--noEmit"]
-    },
-    {
-      "id": "test",
-      "executable": "npx",
-      "arguments": ["vitest", "run"]
-    }
-  ]
-}
+```mermaid
+flowchart LR
+    A[Contract] -->|Defines Scope| B(AI Implementation)
+    B --> C{Verification}
+    C -->|Scope Check| D[Evidence]
+    C -->|Tests/Lint| D
+    C -->|Side-effect Check| D
 ```
 
-`cw prepare` locks this spec against the current Git state, producing a deterministic contract with cryptographic hashes.
+1. **Contract**: A rigid specification of allowed paths, forbidden paths, and verification commands.
+2. **AI Implementation**: Any agent (or human) modifies the codebase.
+3. **Verification**: CW checks the Git tree diff against the contract, runs verification commands, and ensures no unauthorized workspace mutations occurred.
+4. **Evidence**: A cryptographically signed JSON record is produced, asserting whether the change is `accepted`, `rejected`, or `inconclusive`.
 
-### 2. Verify the Implementation
+## CLI Reference
 
-After the AI agent commits its changes, run `cw verify`. This:
+| Command | Description |
+|---|---|
+| `cw init` | Initialize CW in the current project |
+| `cw prepare` | Create a deterministic task contract |
+| `cw verify` | Verify an AI implementation against contract |
+| `cw show` | Inspect a contract or evidence record |
+| `cw status` | Show a dashboard of tasks and their state |
+| `cw list` | List all task contracts and verifications |
+| `cw diff` | Evaluate Git tree changes against baseSha |
+| `cw watch` | Watch for task changes |
+| `cw report` | Generate a compliance report of all tasks |
+| `cw clean` | Clean temporary files and rejected runs |
+| `cw export` | Export contracts and evidence to a bundle |
+| `cw map` | Generate a context map of repository symbols |
+| `cw help` | Show help message |
+| `cw version` | Show version |
 
-1. **Diff analysis** — Computes exact changed files between the contract's base commit and HEAD
-2. **Scope check** — Ensures all changes are within allowed paths and none in forbidden paths
-3. **Verification commands** — Runs each command (lint, test, typecheck) in a sandboxed environment
-4. **Mutation detection** — Checks that verification commands didn't modify the workspace
-5. **Evidence chain** — Produces a cryptographically signed evidence record
+## Architecture
 
-### 3. Review the Evidence
+CW is designed with a strict layered architecture:
+- **Core Engine**: The domain logic (14 modules). Handles contracts, verification, bounding, risk scoring, state machines, and cryptographic integrity.
+- **Git Layer**: Direct interface with Git objects and trees (without parsing `git log` output).
+- **Store Layer**: Manages the `.cw` directory state, atomic JSON writes, and persistent records.
+- **CLI Layer**: The 14 commands that expose the core capabilities to the terminal.
 
-The verification produces a JSON evidence record:
+## Comparison Table
 
-```
-cw show --file .cw/tasks/add-login-page/verification-abc123.json
-```
+| Feature | CW | Aider / Cursor | SWE-agent |
+|---|---|---|---|
+| **Goal** | Governance & Verification | Code Generation | Autonomous Issue Resolution |
+| **Scope Enforcement** | Cryptographic verification | Prompt-based (soft) | Prompt-based (soft) |
+| **Side-effect Detection** | Yes (Git tree checks) | No | No |
+| **Evidence Records** | Cryptographic JSON payloads | None | Run logs |
+| **Integrations** | Any agent or human | Built-in models only | Built-in pipeline |
 
-```
-● ACCEPTED
-  Task: add-login-page
-  Changes: 4 files
-  Scope: passed
-  Checks: 2 passed
-  Evidence: .cw/tasks/add-login-page/verification-abc123-abc.json
-```
+## API Usage
 
-## CLI Commands
-
-| Command    | Description                                      |
-|------------|--------------------------------------------------|
-| `cw init`    | Initialize CW in the current project             |
-| `cw prepare` | Create a deterministic task contract              |
-| `cw verify`  | Verify an AI implementation against a contract    |
-| `cw show`    | Inspect a contract or evidence record             |
-| `cw help`    | Show usage information                            |
-| `cw version` | Show version                                      |
-
-## Verify Exit Codes
-
-| Code | Meaning     |
-|------|-------------|
-| `0`  | Accepted    |
-| `2`  | Rejected    |
-| `3`  | Inconclusive|
-
-## As a Library
+CW is fully typed and can be integrated directly into your CI/CD pipelines or custom agent backends.
 
 ```typescript
-import { prepareTaskContract, verifyChange, parseTaskContract } from 'cw';
+import { prepareTaskContract, verifyChange } from 'cw';
 
-// Prepare a contract programmatically
+// Prepare a contract
 const contract = await prepareTaskContract({
-  repositoryRoot: '/path/to/repo',
-  draft: taskSpec,
-  baseRef: 'main',
-  preparedBy: 'my-automation',
+  repositoryRoot: process.cwd(),
+  draft: myTaskSpec,
+  preparedBy: 'ci-pipeline',
 });
 
-// Verify programmatically
+// Verify the result
 const evidence = await verifyChange({
-  repositoryRoot: '/path/to/repo',
+  repositoryRoot: process.cwd(),
   contract,
-  implementer: { provider: 'my-agent', runId: 'run-123' },
+  implementer: { provider: 'cursor', runId: 'session-123' },
 });
 
-console.log(evidence.verdict); // 'accepted' | 'rejected' | 'inconclusive'
+console.log(`Verdict: ${evidence.verdict}`);
 ```
 
-## Key Properties
+## Contributing
 
-- **Zero runtime dependencies** — Only uses Node.js built-ins
-- **Deterministic** — Same input always produces the same contract digest
-- **Git-native** — Works directly with Git objects, no file-system snapshots
-- **Cryptographic integrity** — SHA-256 hashes chain contracts to evidence
-- **Agent-agnostic** — Works with any AI coding agent or manual development
-
-## Requirements
-
-- Node.js ≥ 20
-- Git ≥ 2.40
+We welcome contributions! Please follow these guidelines:
+1. Ensure `npm run typecheck` and `npm test` pass before submitting a PR.
+2. Maintain the zero-dependency rule for the runtime (devDependencies are fine).
+3. Follow the established layered architecture (no Core depending on CLI).
 
 ## License
 
