@@ -1,6 +1,9 @@
 // cw — Public API
 // Re-export core types and functions for use as a library.
 
+export { getSystemHealth } from "./core/healthcheck.js";
+export type { HealthStatus } from "./core/healthcheck.js";
+
 export {
   parseTaskContract,
   parseTaskContractDraft,
