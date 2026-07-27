@@ -86,3 +86,15 @@ export {
   persistCycleMetadata,
   PersistenceError,
 } from "./store/persistence.js";
+
+export { buildMerkleTree, computeMerkleRoot, generateMerkleProof, verifyMerkleProof } from "./core/merkle.js";
+export type { MerkleEntry, MerkleProofNode } from "./core/merkle.js";
+
+export { calculateDiffRiskScore } from "./core/risk-scoring.js";
+export type { RiskAssessment } from "./core/risk-scoring.js";
+
+export { evaluateConsensusVerdict } from "./core/consensus.js";
+export type { ConsensusVerdict, ConsensusResult } from "./core/consensus.js";
+
+export { extractDependencies, checkDependencyLeaks } from "./core/ast-boundary.js";
+export type { DependencyLeak } from "./core/ast-boundary.js";
