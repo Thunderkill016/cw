@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { evaluateConsensusVerdict } from "../src/core/consensus.js";
+import { evaluateConsensusVerdict, evaluateWeightedConsensus } from "../src/core/consensus.js";
 import type { AcceptanceAssessmentV1 } from "../src/core/assessment.js";
 import type { TaskContractV1 } from "../src/core/contract.js";
 
@@ -63,5 +63,79 @@ describe("evaluateConsensusVerdict", () => {
     ];
     const result = evaluateConsensusVerdict(assessments, mockContract);
     expect(result.verdict).toBe("inconclusive");
+  });
+});
+
+describe("evaluateWeightedConsensus", () => {
+  const config = {
+    minReviewers: 3,
+    requiredHuman: 1,
+    bftThreshold: 0.66,
+    weights: [
+      { type: "human", weight: 1.0 },
+      { type: "ai-security", weight: 0.8 },
+      { type: "ai-general", weight: 0.5 }
+    ]
+  };
+
+  it("should return inconclusive if minReviewers not met", () => {
+    const assessments = [
+      { ...createMockAssessment(["passed"]), reviewer: { provider: "human", runId: "1" } }
+    ];
+    const result = evaluateWeightedConsensus(assessments, config);
+    expect(result.verdict).toBe("inconclusive");
+    expect(result.totalReviewers).toBe(1);
+  });
+
+  it("should return inconclusive if requiredHuman not met", () => {
+    const assessments = [
+      { ...createMockAssessment(["passed"]), reviewer: { provider: "ai-security", runId: "1" } },
+      { ...createMockAssessment(["passed"]), reviewer: { provider: "ai-security", runId: "2" } },
+      { ...createMockAssessment(["passed"]), reviewer: { provider: "ai-general", runId: "3" } }
+    ];
+    const result = evaluateWeightedConsensus(assessments, config);
+    expect(result.verdict).toBe("inconclusive");
+    expect(result.humanReviewers).toBe(0);
+  });
+
+  it("should accept with weighted majority", () => {
+    const assessments = [
+      { ...createMockAssessment(["passed"]), reviewer: { provider: "human", runId: "1" } }, // weight 1.0
+      { ...createMockAssessment(["passed"]), reviewer: { provider: "ai-security", runId: "2" } }, // weight 0.8
+      { ...createMockAssessment(["failed"]), reviewer: { provider: "ai-general", runId: "3" } } // weight 0.5
+    ];
+    const result = evaluateWeightedConsensus(assessments, config);
+    
+    // total weight: 2.3
+    // accepted weight: 1.8
+    // rejected weight: 0.5
+    // accepted ratio: 1.8 / 2.3 ≈ 0.7826 > 0.66
+    expect(result.verdict).toBe("accepted");
+    expect(result.weightedScore).toBe(1.8);
+    expect(result.confidence).toBeGreaterThan(0.78);
+  });
+
+  it("should reject if human veto (weight changes balance)", () => {
+    const configVeto = {
+      ...config,
+      weights: [
+        { type: "human", weight: 2.0 },
+        { type: "ai-security", weight: 0.5 },
+        { type: "ai-general", weight: 0.5 }
+      ]
+    };
+    const assessments = [
+      { ...createMockAssessment(["failed"]), reviewer: { provider: "human", runId: "1" } }, // weight 2.0
+      { ...createMockAssessment(["passed"]), reviewer: { provider: "ai-security", runId: "2" } }, // weight 0.5
+      { ...createMockAssessment(["passed"]), reviewer: { provider: "ai-general", runId: "3" } } // weight 0.5
+    ];
+    const result = evaluateWeightedConsensus(assessments, configVeto);
+    
+    // total weight: 3.0
+    // rejected weight: 2.0
+    // accepted weight: 1.0
+    // rejected ratio: 2.0 / 3.0 = 0.666 > 0.66
+    expect(result.verdict).toBe("rejected");
+    expect(result.weightedScore).toBe(2.0);
   });
 });

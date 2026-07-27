@@ -14,6 +14,8 @@ import { runReport } from "./report.js";
 import { runClean } from "./clean.js";
 import { runExport } from "./export.js";
 import { runMap } from "./map.js";
+import { runProvenance } from "./provenance.js";
+import { runAudit } from "./audit.js";
 
 const VERSION = "0.1.0";
 
@@ -32,6 +34,8 @@ Usage:
   cw export                            Export contracts and evidence to a bundle
   cw status                            Show a dashboard of tasks and their state
   cw clean                             Clean temporary files and rejected runs
+  cw provenance                        Manage AI provenance records
+  cw audit                             Manage cryptographic audit log
   cw help                              Show this help message
   cw version                           Show version
 
@@ -130,6 +134,10 @@ async function main(): Promise<number> {
         return await runReport(commandArgs, io);
       case "clean":
         return await runClean(commandArgs, io);
+      case "provenance":
+        return await runProvenance(commandArgs, io);
+      case "audit":
+        return await runAudit(commandArgs, io);
       default:
         io.stderr(`${red("Error:")} Unknown command: ${command}\n`);
         io.stderr(`Run ${bold("cw help")} for usage information.\n`);

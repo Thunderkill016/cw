@@ -97,11 +97,36 @@ export type { MerkleEntry, MerkleProofNode } from "./core/merkle.js";
 export { calculateDiffRiskScore } from "./core/risk-scoring.js";
 export type { RiskAssessment } from "./core/risk-scoring.js";
 
-export { evaluateConsensusVerdict } from "./core/consensus.js";
-export type { ConsensusVerdict, ConsensusResult } from "./core/consensus.js";
+export { evaluateConsensusVerdict, evaluateWeightedConsensus } from "./core/consensus.js";
+export type { 
+  ConsensusVerdict, 
+  ConsensusResult, 
+  ReviewerWeight, 
+  ConsensusConfig, 
+  ConsensusVerdictDetails 
+} from "./core/consensus.js";
 
 export { extractDependencies, checkDependencyLeaks } from "./core/ast-boundary.js";
 export type { DependencyLeak } from "./core/ast-boundary.js";
 
 export { generateRepoMap } from "./core/repo-map.js";
 export type { RepoMapNode, RepoMapResult } from "./core/repo-map.js";
+
+export {
+  classifyFile,
+  classifyFiles,
+  riskLevelValue,
+  aggregateRiskLevel,
+  DEFAULT_RULES
+} from "./core/code-classifier.js";
+export type {
+  RiskLevel,
+  FileClassification,
+  ClassificationRules
+} from "./core/code-classifier.js";
+
+export { createProvenanceRecord, verifyProvenanceRecord, formatProvenanceForSlsa } from "./core/provenance.js";
+export type { AiProvenance, ProvenanceRecord, CreateProvenanceRecordInput } from "./core/provenance.js";
+
+export { createAuditLog, appendEntry, verifyLogIntegrity, getInclusionProof } from "./core/audit-log.js";
+export type { AuditEntry, AuditLog } from "./core/audit-log.js";

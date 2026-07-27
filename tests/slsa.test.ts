@@ -46,14 +46,14 @@ describe("SLSA Provenance Engine", () => {
 
     const provenance = formatSlsaProvenance(evidence);
 
-    expect(provenance._type).toBe("https://in-toto.io/Statement/v0.1");
+    expect(provenance._type).toBe("https://in-toto.io/Statement/v1");
     expect(provenance.predicateType).toBe("https://slsa.dev/provenance/v1");
     
     expect(provenance.subject.length).toBe(1);
     expect(provenance.subject[0]?.name).toBe("git+commit://refs/heads/main");
     expect(provenance.subject[0]?.digest?.sha1).toBe("cccccccccccccccccccccccccccccccccccccccc");
 
-    expect(provenance.predicate.buildDefinition.buildType).toBe("https://cyclewarden.org/verification-evidence/v1");
+    expect(provenance.predicate.buildDefinition.buildType).toBe("https://cw.dev/ai-verification/v1");
     expect(provenance.predicate.buildDefinition.externalParameters.taskId).toBe("task:abc123456789012345678901");
     expect(provenance.predicate.buildDefinition.resolvedDependencies?.[0]?.digest?.sha1).toBe("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
 
