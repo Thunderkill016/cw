@@ -54,11 +54,15 @@ export async function runStatus(argv: string[], io: CliOutput): Promise<number> 
           } else if (entry.name.startsWith("verification-") && entry.name.endsWith(".json")) {
              verificationsCount++;
              const content = await readFile(resolve(taskPath, entry.name), "utf8");
-             const parsed = JSON.parse(content);
-             const time = new Date(parsed.verifiedAt || 0).getTime();
-             if (time > latestTime) {
-               latestTime = time;
-               latestVerification = parsed;
+             try {
+               const parsed = JSON.parse(content);
+               const time = new Date(parsed.verifiedAt || 0).getTime();
+               if (time > latestTime) {
+                 latestTime = time;
+                 latestVerification = parsed;
+               }
+             } catch {
+               // Skip corrupt evidence files
              }
           }
         }

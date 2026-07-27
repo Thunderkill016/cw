@@ -70,5 +70,40 @@ describe("AST Dependency Graph Boundary Engine", () => {
       const leaks = checkDependencyLeaks("src/core/main.ts", code, forbiddenPaths);
       expect(leaks).toHaveLength(0);
     });
+
+    it("detects leaks through .jsx and .tsx extensions (React components)", () => {
+      const code = `import { Button } from "./components/Button";`;
+      const forbiddenPaths: TaskPathRule[] = [
+        { kind: "file", path: "src/core/components/Button.tsx" },
+      ];
+      const leaks = checkDependencyLeaks("src/core/main.ts", code, forbiddenPaths);
+      expect(leaks).toHaveLength(1);
+      expect(leaks[0].matchedRule.path).toBe("src/core/components/Button.tsx");
+    });
+
+    it("detects leaks through .cjs and .mjs extensions (ESM/CJS modules)", () => {
+      const code = `import { config } from "./config";`;
+      const forbiddenPathsCjs: TaskPathRule[] = [
+        { kind: "file", path: "src/core/config.cjs" },
+      ];
+      const leaksCjs = checkDependencyLeaks("src/core/main.ts", code, forbiddenPathsCjs);
+      expect(leaksCjs).toHaveLength(1);
+
+      const forbiddenPathsMjs: TaskPathRule[] = [
+        { kind: "file", path: "src/core/config.mjs" },
+      ];
+      const leaksMjs = checkDependencyLeaks("src/core/main.ts", code, forbiddenPathsMjs);
+      expect(leaksMjs).toHaveLength(1);
+    });
+
+    it("detects leaks through index.jsx and index.tsx barrel files", () => {
+      const code = `import { utils } from "./shared";`;
+      const forbiddenPaths: TaskPathRule[] = [
+        { kind: "file", path: "src/core/shared/index.tsx" },
+      ];
+      const leaks = checkDependencyLeaks("src/core/main.ts", code, forbiddenPaths);
+      expect(leaks).toHaveLength(1);
+      expect(leaks[0].matchedRule.path).toBe("src/core/shared/index.tsx");
+    });
   });
 });

@@ -54,11 +54,21 @@ export async function runExport(argv: string[], io: CliOutput): Promise<number> 
         const hash = createHash("sha256").update(content).digest("hex");
 
         if (entry.name === "contract.json") {
-          contracts.push(JSON.parse(content));
+          try {
+            contracts.push(JSON.parse(content));
+          } catch {
+            // Skip corrupt contract files
+            continue;
+          }
           merkleEntries.push({ path: relPath, hash });
         } else if (entry.name.startsWith("verification-") && entry.name.endsWith(".json")) {
-          const parsed = JSON.parse(content);
-          evidence.push(options.slsa ? formatSlsaProvenance(parsed) : parsed);
+          try {
+            const parsed = JSON.parse(content);
+            evidence.push(options.slsa ? formatSlsaProvenance(parsed) : parsed);
+          } catch {
+            // Skip corrupt evidence files
+            continue;
+          }
           merkleEntries.push({ path: relPath, hash });
         }
       }

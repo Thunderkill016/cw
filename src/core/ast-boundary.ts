@@ -82,16 +82,27 @@ export function checkDependencyLeaks(
     for (const rule of forbiddenPaths) {
       let matches = false;
 
-      // Check resolved path if it matches file exactly or with common extensions
+      // Check resolved path if it matches file exactly or with common extensions.
+      // Covers JS/TS (.js, .ts), React (.jsx, .tsx), CommonJS (.cjs), ESM (.mjs),
+      // and barrel index files (index.js, index.ts) to prevent boundary leaks
+      // through any modern JS/TS module resolution path.
       if (resolvedPath) {
         if (taskPathRuleMatches(resolvedPath, rule)) {
           matches = true;
         } else if (
           rule.kind === "file" &&
           (taskPathRuleMatches(resolvedPath + ".js", rule) ||
+            taskPathRuleMatches(resolvedPath + ".jsx", rule) ||
+            taskPathRuleMatches(resolvedPath + ".ts", rule) ||
+            taskPathRuleMatches(resolvedPath + ".tsx", rule) ||
+            taskPathRuleMatches(resolvedPath + ".cjs", rule) ||
+            taskPathRuleMatches(resolvedPath + ".mjs", rule) ||
             taskPathRuleMatches(resolvedPath.replace(/\.js$/, ".ts"), rule) ||
+            taskPathRuleMatches(resolvedPath.replace(/\.js$/, ".tsx"), rule) ||
             taskPathRuleMatches(resolvedPath + "/index.js", rule) ||
-            taskPathRuleMatches(resolvedPath + "/index.ts", rule))
+            taskPathRuleMatches(resolvedPath + "/index.ts", rule) ||
+            taskPathRuleMatches(resolvedPath + "/index.jsx", rule) ||
+            taskPathRuleMatches(resolvedPath + "/index.tsx", rule))
         ) {
           matches = true;
         } else if (

@@ -85,4 +85,37 @@ describe("CLI - hook", () => {
     
     expect(stdoutData).toContain("Removed pre-commit and pre-push hooks");
   });
+
+  it("refuses to overwrite foreign hooks without --force", async () => {
+    const preCommitPath = join(tempDir, ".git", "hooks", "pre-commit");
+    // Simulate an existing Husky hook (no cw-hook marker)
+    await writeFile(preCommitPath, "#!/bin/sh\n# husky\nnpx lint-staged\n");
+
+    const code = await runHook(["install"], io);
+    expect(code).toBe(1);
+    expect(stderrData).toContain("was not created by cw");
+    expect(stderrData).toContain("--force");
+  });
+
+  it("overwrites foreign hooks when --force is passed", async () => {
+    const preCommitPath = join(tempDir, ".git", "hooks", "pre-commit");
+    await writeFile(preCommitPath, "#!/bin/sh\n# husky\nnpx lint-staged\n");
+
+    const code = await runHook(["install", "--force"], io);
+    expect(code).toBe(0);
+    expect(stdoutData).toContain("Installed pre-commit and pre-push hooks");
+    expect(stderrData).toContain("Overwriting");
+  });
+
+  it("allows re-install of cw-owned hooks without --force", async () => {
+    // First install
+    await runHook(["install"], io);
+    stdoutData = "";
+    stderrData = "";
+
+    // Re-install (hooks contain # cw-hook marker, should succeed)
+    const code = await runHook(["install"], io);
+    expect(code).toBe(0);
+    expect(stdoutData).toContain("Installed pre-commit and pre-push hooks");
+  });
 });

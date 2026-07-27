@@ -65,14 +65,22 @@ export async function runReport(argv: string[], io: CliOutput): Promise<number> 
         if (entry.isFile()) {
           if (entry.name === "contract.json") {
              const content = await readFile(resolve(taskPath, entry.name), "utf8");
-             contract = JSON.parse(content) as TaskContractV1;
+             try {
+               contract = JSON.parse(content) as TaskContractV1;
+             } catch {
+               // Skip corrupt contract files
+             }
           } else if (entry.name.startsWith("verification-") && entry.name.endsWith(".json")) {
              const content = await readFile(resolve(taskPath, entry.name), "utf8");
-             const parsed = JSON.parse(content) as VerificationEvidenceV1;
-             const time = new Date(parsed.completedAt || parsed.startedAt || 0).getTime();
-             if (time >= latestTime) {
-               latestTime = time;
-               latestVerification = parsed;
+             try {
+               const parsed = JSON.parse(content) as VerificationEvidenceV1;
+               const time = new Date(parsed.completedAt || parsed.startedAt || 0).getTime();
+               if (time >= latestTime) {
+                 latestTime = time;
+                 latestVerification = parsed;
+               }
+             } catch {
+               // Skip corrupt evidence files
              }
           }
         }

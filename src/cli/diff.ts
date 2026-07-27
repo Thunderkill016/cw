@@ -24,11 +24,13 @@ export async function runDiff(argv: string[], io: CliOutput): Promise<number> {
   }
 
   const contractContent = await readFile(resolve(contractPath), "utf8");
-  const contract = JSON.parse(contractContent) as TaskContractV1;
-
-  if (contract.recordType !== "task-contract") {
-    throw new Error("File is not a valid task contract");
+  let contract: TaskContractV1;
+  try {
+    contract = JSON.parse(contractContent) as TaskContractV1;
+  } catch {
+    throw new Error(`Failed to parse contract file: ${contractPath} (invalid JSON)`);
   }
+
 
   const projectRoot = process.cwd();
   const repositoryRoot = await canonicalGitRoot(projectRoot);
