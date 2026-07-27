@@ -1,3 +1,4 @@
+// CW Watch Subcommand Engine
 import { parseArgs } from "node:util";
 import { resolve } from "node:path";
 import type { CliOutput } from "./index.js";
