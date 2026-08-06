@@ -1,7 +1,7 @@
-# Hướng Dẫn Sử Dụng CW — Chi Tiết Từ A-Z
+# Hướng Dẫn Sử Dụng Forge — Chi Tiết Từ A-Z
 
-CW (Cyclewarden) là công cụ giám sát và xác thực code do AI tạo ra.  
-Repo: **https://github.com/Thunderkill016/cw**
+Forge (Atoryn Forge) là công cụ giám sát và xác thực code do AI tạo ra.  
+Repo: **https://github.com/Thunderkill016/atoryn-forge**
 
 ---
 
@@ -26,14 +26,14 @@ Repo: **https://github.com/Thunderkill016/cw**
 
 ### Dùng trực tiếp (không cần cài)
 ```bash
-npx cw version
-npx cw help
+npx atoryn-forge version
+npx atoryn-forge help
 ```
 
 ### Cài toàn cục
 ```bash
-npm install -g cw
-cw version    # → cw 0.2.0
+npm install -g atoryn-forge
+forge version    # → atoryn-forge 0.3.0
 ```
 
 ### Yêu cầu
@@ -43,14 +43,14 @@ cw version    # → cw 0.2.0
 
 ### Kiểm tra môi trường
 ```bash
-npx cw doctor
+npx atoryn-forge doctor
 ```
 Output:
 ```
 ✓ Git 2.45.2
 ✓ Git repository found
 ✓ Node.js v22.5.0 (>= 20 required)
-✓ CW initialized (.cw/ found)
+✓ Forge initialized (.forge/ found)
 ✓ Package manager: npm
 ✓ Test runner: vitest
 ```
@@ -62,7 +62,7 @@ Output:
 ```
 ┌──────────┐     ┌──────────┐     ┌──────────┐     ┌──────────┐     ┌──────────┐
 │  1. INIT │ ──▶ │ 2. SPEC  │ ──▶ │3. PREPARE│ ──▶ │ 4. AI DO │ ──▶ │5. VERIFY │
-│  cw init │     │task.json │     │cw prepare│     │ (commit) │     │cw verify │
+│  forge init │     │task.json │     │forge prepare│     │ (commit) │     │forge verify │
 └──────────┘     └──────────┘     └──────────┘     └──────────┘     └──────────┘
                                                                          │
                                                                     ┌────┴────┐
@@ -78,8 +78,8 @@ Output:
 
 ```bash
 cd my-project
-cw init            # Khởi tạo cơ bản
-cw init --auto     # Tự động detect project type + test runner
+forge init            # Khởi tạo cơ bản
+forge init --auto     # Tự động detect project type + test runner
 ```
 
 `--auto` sẽ tự nhận diện:
@@ -88,14 +88,14 @@ cw init --auto     # Tự động detect project type + test runner
 - **Rust** → `Cargo.toml` → `cargo test`
 - **Go** → `go.mod` → `go test ./...`
 
-Sau khi init, thư mục `.cw/` được tạo:
+Sau khi init, thư mục `.forge/` được tạo:
 ```
-.cw/
+.forge/
 ├── tasks/        # Chứa contracts và evidence
 └── evidence/     # Chứa hash evidence
 ```
 
-> **Tip:** Thêm `.cw/` vào `.gitignore` nếu không muốn track state.
+> **Tip:** Thêm `.forge/` vào `.gitignore` nếu không muốn track state.
 
 ---
 
@@ -170,7 +170,7 @@ Tạo file `task.json` mô tả **chính xác** AI được phép làm gì:
 ## 5. Bước 3: Khóa Contract
 
 ```bash
-cw prepare --spec task.json
+forge prepare --spec task.json
 ```
 
 Output:
@@ -179,10 +179,10 @@ Output:
   Objective: Thêm tính năng tìm kiếm sản phẩm theo tên
   Base: a1b2c3d4e5f6
   Digest: f63844a8005ae14c…
-  Saved: .cw/tasks/add-search-feature/contract.json
+  Saved: .forge/tasks/add-search-feature/contract.json
 ```
 
-**Điều gì xảy ra:** CW snapshot Git state hiện tại (SHA commit), tạo hash cho toàn bộ contract → không ai có thể sửa contract sau khi đã khóa.
+**Điều gì xảy ra:** Forge snapshot Git state hiện tại (SHA commit), tạo hash cho toàn bộ contract → không ai có thể sửa contract sau khi đã khóa.
 
 ---
 
@@ -203,14 +203,14 @@ AI viết code → commit → sẵn sàng verify.
 ## 7. Bước 5: Verify
 
 ```bash
-cw verify \
-  --contract .cw/tasks/add-search-feature/contract.json \
+forge verify \
+  --contract .forge/tasks/add-search-feature/contract.json \
   --implementer-provider cursor \
   --implementer-run session-123 \
   --trusted-repository
 ```
 
-### CW kiểm tra gì?
+### Forge kiểm tra gì?
 
 1. **Scope Check:** AI có sửa file nào ngoài `allowedPaths` không?
 2. **Forbidden Check:** AI có chạm vào file cấm không?
@@ -231,7 +231,7 @@ cw verify \
 ## 8. Bước 6: Xem Bằng Chứng
 
 ```bash
-cw show --file .cw/tasks/add-search-feature/verification-*.json
+forge show --file .forge/tasks/add-search-feature/verification-*.json
 ```
 
 Output khi **ACCEPTED**:
@@ -261,31 +261,31 @@ Output khi **REJECTED**:
 
 ### Lệnh chính
 ```bash
-cw init [--auto]                    # Khởi tạo CW
-cw doctor [--json]                  # Kiểm tra môi trường
-cw prepare --spec <file>            # Tạo contract từ spec
-cw verify --contract <file>         # Verify AI changes
-cw show --file <file>               # Xem contract/evidence
+forge init [--auto]                    # Khởi tạo Forge
+forge doctor [--json]                  # Kiểm tra môi trường
+forge prepare --spec <file>            # Tạo contract từ spec
+forge verify --contract <file>         # Verify AI changes
+forge show --file <file>               # Xem contract/evidence
 ```
 
 ### Quản lý & Báo cáo
 ```bash
-cw status                           # Dashboard tất cả tasks
-cw list                             # Liệt kê contracts & evidence
-cw diff --contract <file>           # Xem file nào bị thay đổi
-cw report [--json] [--out file]     # Báo cáo compliance
-cw export [--out file]              # Xuất bundle evidence
-cw clean [--dry-run] [--all]        # Dọn dẹp files tạm
+forge status                           # Dashboard tất cả tasks
+forge list                             # Liệt kê contracts & evidence
+forge diff --contract <file>           # Xem file nào bị thay đổi
+forge report [--json] [--out file]     # Báo cáo compliance
+forge export [--out file]              # Xuất bundle evidence
+forge clean [--dry-run] [--all]        # Dọn dẹp files tạm
 ```
 
 ### Nâng cao
 ```bash
-cw map                              # Bản đồ symbols trong repo
-cw hook install [--force]           # Cài git hooks (pre-commit)
-cw hook remove                     # Gỡ git hooks
-cw provenance record               # Ghi metadata AI provenance
-cw audit show                       # Xem audit log
-cw audit verify                     # Kiểm tra tính toàn vẹn log
+forge map                              # Bản đồ symbols trong repo
+forge hook install [--force]           # Cài git hooks (pre-commit)
+forge hook remove                     # Gỡ git hooks
+forge provenance record               # Ghi metadata AI provenance
+forge audit show                       # Xem audit log
+forge audit verify                     # Kiểm tra tính toàn vẹn log
 ```
 
 ---
@@ -295,7 +295,7 @@ cw audit verify                     # Kiểm tra tính toàn vẹn log
 ### GitHub Actions
 ```yaml
 # .github/workflows/verify.yml
-name: CW Verify
+name: Forge Verify
 on: [pull_request]
 jobs:
   verify:
@@ -307,8 +307,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - run: npx cw verify \
-          --contract .cw/tasks/${{ github.event.pull_request.title }}/contract.json \
+      - run: npx atoryn-forge verify \
+          --contract .forge/tasks/${{ github.event.pull_request.title }}/contract.json \
           --implementer-provider github-actions \
           --implementer-run ${{ github.run_id }} \
           --trusted-repository
@@ -316,24 +316,24 @@ jobs:
 
 ### GitLab CI
 ```yaml
-cw-verify:
+forge-verify:
   image: node:20
   script:
-    - npx cw verify --contract $CONTRACT_PATH --trusted-repository
+    - npx atoryn-forge verify --contract $CONTRACT_PATH --trusted-repository
   rules:
     - if: $CI_MERGE_REQUEST_ID
 ```
 
 ### Pre-commit Hook
 ```bash
-cw hook install    # Tự động chạy cw diff trước mỗi commit
+forge hook install    # Tự động chạy forge diff trước mỗi commit
 ```
 
 ---
 
 ## 11. API Lập Trình
 
-Dùng CW như thư viện TypeScript trong code:
+Dùng Forge như thư viện TypeScript trong code:
 
 ```typescript
 import {
@@ -342,12 +342,12 @@ import {
   classifyFile,
   evaluateWeightedConsensus,
   computeMerkleRoot,
-} from 'cw';
+} from 'atoryn-forge';
 
 // 1. Tạo contract
 const contract = await prepareTaskContract({
   repositoryRoot: process.cwd(),
-  stateRoot: '.cw',
+  stateRoot: '.forge',
   draft: myTaskSpec,
   baseRef: 'HEAD',
   preparedBy: 'ci-bot',
@@ -377,7 +377,7 @@ const risk = classifyFile('src/auth/login.ts');
 ```bash
 # 1. Init
 cd expense-tracker
-cw init
+forge init
 
 # 2. Viết spec: yêu cầu AI thêm tính năng recurring transactions
 cat > task.json << 'EOF'
@@ -400,12 +400,12 @@ cat > task.json << 'EOF'
 EOF
 
 # 3. Khóa contract
-cw prepare --spec task.json
+forge prepare --spec task.json
 
 # 4. AI viết code... rồi commit
 
 # 5. Verify
-cw verify --contract .cw/tasks/add-recurring/contract.json \
+forge verify --contract .forge/tasks/add-recurring/contract.json \
   --implementer-provider claude-code \
   --implementer-run session-001 \
   --trusted-repository
@@ -415,8 +415,8 @@ cw verify --contract .cw/tasks/add-recurring/contract.json \
 ```
 
 ### Kết quả thực tế đã demo:
-- CW phát hiện AI commit file `.cw/contract.json` (thuộc forbidden scope) → **REJECTED** ❌
-- Sau khi sửa (gitignore `.cw/`) → chỉ còn `app.js`, `index.html`, `index.css` thay đổi → đúng scope
+- Forge phát hiện AI commit file `.forge/contract.json` (thuộc forbidden scope) → **REJECTED** ❌
+- Sau khi sửa (gitignore `.forge/`) → chỉ còn `app.js`, `index.html`, `index.css` thay đổi → đúng scope
 
 ---
 
@@ -424,12 +424,12 @@ cw verify --contract .cw/tasks/add-recurring/contract.json \
 
 | Bạn muốn... | Lệnh |
 |:---|:---|
-| Bắt đầu nhanh | `cw init --auto` |
-| Kiểm tra môi trường | `cw doctor` |
-| Tạo hợp đồng cho AI | `cw prepare --spec task.json` |
-| Xác thực code AI | `cw verify --contract <file> --trusted-repository` |
-| Xem bằng chứng | `cw show --file <evidence.json>` |
-| Dashboard tổng quan | `cw status` |
-| Cài git hook tự động | `cw hook install` |
-| Xem audit log | `cw audit show` |
-| Xuất báo cáo | `cw report --out report.md` |
+| Bắt đầu nhanh | `forge init --auto` |
+| Kiểm tra môi trường | `forge doctor` |
+| Tạo hợp đồng cho AI | `forge prepare --spec task.json` |
+| Xác thực code AI | `forge verify --contract <file> --trusted-repository` |
+| Xem bằng chứng | `forge show --file <evidence.json>` |
+| Dashboard tổng quan | `forge status` |
+| Cài git hook tự động | `forge hook install` |
+| Xem audit log | `forge audit show` |
+| Xuất báo cáo | `forge report --out report.md` |

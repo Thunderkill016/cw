@@ -1,10 +1,11 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { existsSync } from "node:fs";
-import { resolve } from "node:path";
+import { basename, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import type { CliOutput } from "./index.js";
 import { green, red } from "./index.js";
+import { resolveDefaultStateRoot } from "../store/runtime-paths.js";
 import { readFile } from "node:fs/promises";
 
 const execFileAsync = promisify(execFile);
@@ -60,11 +61,22 @@ export async function runDoctor(argv: string[], io: CliOutput): Promise<number> 
     allPassed = false;
   }
 
-  // 4. .cw/ directory exists
-  if (existsSync(resolve(projectRoot, ".cw"))) {
-    checks.push({ name: "CW initialized", passed: true, message: "CW initialized (.cw/ found)" });
+  // 4. State directory exists (either the canonical .forge or a legacy .cw store)
+  const stateRoot = resolveDefaultStateRoot(projectRoot);
+  const stateDirName = basename(stateRoot);
+  if (existsSync(stateRoot)) {
+    checks.push({
+      name: "Forge initialized",
+      passed: true,
+      message: `Forge initialized (${stateDirName}/ found)`,
+      value: stateRoot,
+    });
   } else {
-    checks.push({ name: "CW initialized", passed: false, message: "CW not initialized (.cw/ not found, run 'cw init')" });
+    checks.push({
+      name: "Forge initialized",
+      passed: false,
+      message: `Forge not initialized (${stateDirName}/ not found, run 'forge init')`,
+    });
     allPassed = false;
   }
 

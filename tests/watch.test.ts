@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { runWatch } from "../src/cli/watch.js";
 
-describe("cw watch subcommand", () => {
+describe("forge watch subcommand", () => {
   it("executes watch command cleanly with default options", async () => {
     let output = "";
     const io = {
@@ -11,7 +11,7 @@ describe("cw watch subcommand", () => {
 
     const code = await runWatch([], io);
     expect(code).toBe(0);
-    expect(output).toContain("Watching CW state directory");
+    expect(output).toContain("Watching Forge state directory");
   });
 
   it("supports --json flag", async () => {

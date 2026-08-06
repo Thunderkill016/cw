@@ -1,40 +1,48 @@
-import { readFile, mkdir, writeFile } from "node:fs/promises";
-import { join, dirname } from "node:path";
-import { AuditLog, createAuditLog, verifyLogIntegrity } from "../core/audit-log.js";
-import { resolveDefaultStateRoot } from "../store/runtime-paths.js";
-import type { CliOutput } from "./index.js";
+import { readdir, mkdir, writeFile } from "node:fs/promises";
+import { dirname, resolve } from "node:path";
 import { parseArgs } from "node:util";
-import { randomUUID } from "node:crypto";
+import { canonicalJsonDocument } from "../core/integrity.js";
+import { verifyTaskJournal, type TaskJournalV1 } from "../core/task-journal.js";
+import { readTaskJournal } from "../store/persistence.js";
+import { resolveStateRoot, resolveTasksDir } from "../store/runtime-paths.js";
+import type { CliOutput } from "./index.js";
+import { bold, green, red, yellow } from "./index.js";
 
-function bold(text: string): string {
-  if (process.env["NO_COLOR"] || !process.stdout.isTTY) return text;
-  return `\x1b[1m${text}\x1b[0m`;
-}
-function green(text: string): string {
-  if (process.env["NO_COLOR"] || !process.stdout.isTTY) return text;
-  return `\x1b[32m${text}\x1b[0m`;
-}
-function red(text: string): string {
-  if (process.env["NO_COLOR"] || !process.stdout.isTTY) return text;
-  return `\x1b[31m${text}\x1b[0m`;
-}
+type JournalLoad =
+  | { taskId: string; ok: true; journal: TaskJournalV1 }
+  | { taskId: string; ok: false; error: string };
 
-async function getLogPath(): Promise<string> {
-  const storeRoot = resolveDefaultStateRoot();
-  return join(storeRoot, "audit", "log.json");
-}
-
-async function loadLog(): Promise<AuditLog> {
-  const path = await getLogPath();
+/**
+ * Loads every task journal under the state root.
+ *
+ * A journal that fails to parse or verify is kept in the result as a failure
+ * rather than dropped, so `forge audit verify` reports tampering instead of
+ * silently auditing a smaller set of tasks.
+ */
+async function loadJournals(stateRoot: string): Promise<JournalLoad[]> {
+  const tasksDir = resolveTasksDir(stateRoot);
+  let taskIds: string[] = [];
   try {
-    const content = await readFile(path, "utf8");
-    return JSON.parse(content) as AuditLog;
-  } catch (err: any) {
-    if (err.code === "ENOENT") {
-      return createAuditLog(randomUUID());
-    }
-    throw err;
+    const entries = await readdir(tasksDir, { withFileTypes: true });
+    taskIds = entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort();
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
   }
+
+  const loaded: JournalLoad[] = [];
+  for (const taskId of taskIds) {
+    try {
+      const journal = await readTaskJournal(stateRoot, taskId);
+      if (journal) loaded.push({ taskId, ok: true, journal });
+    } catch (error) {
+      loaded.push({
+        taskId,
+        ok: false,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+  return loaded;
 }
 
 export async function runAudit(args: string[], io: CliOutput): Promise<number> {
@@ -43,41 +51,111 @@ export async function runAudit(args: string[], io: CliOutput): Promise<number> {
     options: {
       out: { type: "string" },
       json: { type: "boolean" },
+      "project-root": { type: "string" },
+      root: { type: "string" },
     },
     allowPositionals: true,
+    strict: true,
   });
 
   const subCommand = positionals[0];
+  const projectRoot = resolve(values["project-root"] ?? process.cwd());
+  const stateRoot = resolveStateRoot(projectRoot, values.root);
+  const jsonMode = values.json ?? false;
 
   if (subCommand === "show") {
-    const log = await loadLog();
-    if (values.json) {
-      io.stdout(JSON.stringify(log, null, 2) + "\n");
-    } else {
-      io.stdout(`${bold("Audit Log:")} ${log.logId}\n`);
-      io.stdout(`Merkle Root: ${log.merkleRoot}\n`);
-      io.stdout(`Entries: ${log.entries.length}\n`);
-      for (const entry of log.entries) {
-        io.stdout(`  [${entry.sequenceNumber}] ${entry.timestamp} | ${entry.eventType} | ${entry.entryDigest}\n`);
+    const loaded = await loadJournals(stateRoot);
+
+    if (jsonMode) {
+      io.stdout(canonicalJsonDocument({ stateRoot, tasks: loaded }));
+      return 0;
+    }
+
+    io.stdout(`${bold("Forge Audit")}  ${stateRoot}\n`);
+    if (loaded.length === 0) {
+      io.stdout(`No task journals found.\n`);
+      return 0;
+    }
+    for (const entry of loaded) {
+      if (!entry.ok) {
+        io.stdout(`\n${yellow(entry.taskId)}: ${red("unreadable")} — ${entry.error}\n`);
+        continue;
+      }
+      const { journal } = entry;
+      io.stdout(`\n${yellow(journal.taskId)}  state=${journal.state}\n`);
+      io.stdout(`  Merkle Root: ${journal.merkleRoot}\n`);
+      for (const event of journal.events) {
+        const transition =
+          event.fromState === null ? event.toState : `${event.fromState} → ${event.toState}`;
+        io.stdout(
+          `  [${event.sequenceNumber}] ${event.recordedAt} | ${event.eventType} | ${transition} | ${event.actor}\n`
+        );
       }
     }
     return 0;
   }
 
   if (subCommand === "verify") {
-    const log = await loadLog();
-    const isValid = verifyLogIntegrity(log);
-    
-    if (values.json) {
-      io.stdout(JSON.stringify({ isValid, entriesCount: log.entries.length }, null, 2) + "\n");
-    } else {
-      if (isValid) {
-        io.stdout(`${green("Success:")} Audit log verified. Merkle Root: ${log.merkleRoot}\n`);
+    const loaded = await loadJournals(stateRoot);
+
+    // Reporting "verified" when there is nothing to verify is a false
+    // assurance. An audit over zero journals fails closed.
+    if (loaded.length === 0) {
+      if (jsonMode) {
+        io.stdout(
+          canonicalJsonDocument({
+            stateRoot,
+            verified: false,
+            reason: "no-task-journals",
+            tasksChecked: 0,
+          })
+        );
       } else {
-        io.stderr(`${red("Error:")} Audit log integrity verification failed!\n`);
+        io.stderr(
+          `${red("Error:")} No task journals found under ${stateRoot}; nothing to verify.\n`
+        );
+      }
+      return 1;
+    }
+
+    const results = loaded.map((entry) => {
+      if (!entry.ok) {
+        return { taskId: entry.taskId, valid: false, reason: entry.error, events: 0, merkleRoot: "" };
+      }
+      const integrity = verifyTaskJournal(entry.journal);
+      return {
+        taskId: entry.taskId,
+        valid: integrity.valid,
+        reason: integrity.reason,
+        events: entry.journal.events.length,
+        merkleRoot: entry.journal.merkleRoot,
+      };
+    });
+    const allValid = results.every((result) => result.valid);
+
+    if (jsonMode) {
+      io.stdout(
+        canonicalJsonDocument({
+          stateRoot,
+          verified: allValid,
+          tasksChecked: results.length,
+          results,
+        })
+      );
+    } else if (allValid) {
+      io.stdout(
+        `${green("Success:")} ${results.length} task journal(s) verified under ${stateRoot}.\n`
+      );
+      for (const result of results) {
+        io.stdout(`  ${result.taskId}: ${result.events} events, root ${result.merkleRoot}\n`);
+      }
+    } else {
+      io.stderr(`${red("Error:")} Task journal integrity verification failed.\n`);
+      for (const result of results.filter((item) => !item.valid)) {
+        io.stderr(`  ${result.taskId}: ${result.reason}\n`);
       }
     }
-    return isValid ? 0 : 1;
+    return allValid ? 0 : 1;
   }
 
   if (subCommand === "export") {
@@ -85,17 +163,19 @@ export async function runAudit(args: string[], io: CliOutput): Promise<number> {
       io.stderr(`${red("Error:")} Missing --out argument.\n`);
       return 1;
     }
-    const log = await loadLog();
-    await mkdir(dirname(values.out), { recursive: true });
-    await writeFile(values.out, JSON.stringify(log, null, 2), "utf8");
-    if (values.json) {
-      io.stdout(JSON.stringify({ exportedPath: values.out }, null, 2) + "\n");
+    const loaded = await loadJournals(stateRoot);
+    const outPath = resolve(projectRoot, values.out);
+    await mkdir(dirname(outPath), { recursive: true });
+    await writeFile(outPath, canonicalJsonDocument({ stateRoot, tasks: loaded }), "utf8");
+    if (jsonMode) {
+      io.stdout(canonicalJsonDocument({ exportedPath: outPath, tasks: loaded.length }));
     } else {
-      io.stdout(`${green("Success:")} Audit log exported to ${values.out}\n`);
+      io.stdout(`${green("Success:")} ${loaded.length} task journal(s) exported to ${outPath}\n`);
     }
     return 0;
   }
 
   io.stderr(`${red("Error:")} Unknown audit subcommand: ${subCommand || "none"}\n`);
+  io.stderr(`Expected one of: show, verify, export\n`);
   return 1;
 }

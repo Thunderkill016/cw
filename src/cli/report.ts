@@ -6,8 +6,8 @@ import { canonicalGitRoot, runGitText } from "../git/git-change.js";
 import { calculateDiffRiskScore } from "../core/risk-scoring.js";
 import type { TaskContractV1 } from "../core/contract.js";
 import type { VerificationEvidenceV1 } from "../core/verification.js";
+import { resolveStateRoot, resolveTasksDir } from "../store/runtime-paths.js";
 
-const CW_STATE_DIR = ".cw";
 
 export async function runReport(argv: string[], io: CliOutput): Promise<number> {
   const { values: options } = parseArgs({
@@ -16,12 +16,13 @@ export async function runReport(argv: string[], io: CliOutput): Promise<number> 
       json: { type: "boolean" },
       out: { type: "string" },
       "project-root": { type: "string" },
+      root: { type: "string" },
     },
     strict: true,
   });
 
   const jsonMode = options.json ?? false;
-  const projectRoot = options["project-root"] ? resolve(options["project-root"]) : process.cwd();
+  const projectRoot = resolve(options["project-root"] ?? process.cwd());
   
   let repositoryRoot = projectRoot;
   try {
@@ -30,7 +31,7 @@ export async function runReport(argv: string[], io: CliOutput): Promise<number> 
     // Ignore error, might not be a git repo or running in tests
   }
   
-  const tasksDir = resolve(projectRoot, CW_STATE_DIR, "tasks");
+  const tasksDir = resolveTasksDir(resolveStateRoot(projectRoot, options.root));
 
   let taskIds: string[] = [];
   try {

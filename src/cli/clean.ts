@@ -3,8 +3,7 @@ import { resolve, join } from "node:path";
 import { parseArgs } from "node:util";
 import type { CliOutput } from "./index.js";
 import { bold, green, yellow } from "./index.js";
-
-const CW_STATE_DIR = ".cw";
+import { resolveStateRoot } from "../store/runtime-paths.js";
 
 export async function runClean(argv: string[], io: CliOutput): Promise<number> {
   const { values: options } = parseArgs({
@@ -22,8 +21,8 @@ export async function runClean(argv: string[], io: CliOutput): Promise<number> {
   const jsonMode = options.json ?? false;
   const dryRun = options["dry-run"] ?? false;
   const all = options.all ?? false;
-  const projectRoot = options["project-root"] ?? process.cwd();
-  const stateDir = options.root ? resolve(projectRoot, options.root) : resolve(projectRoot, CW_STATE_DIR);
+  const projectRoot = resolve(options["project-root"] ?? process.cwd());
+  const stateDir = resolveStateRoot(projectRoot, options.root);
 
   const deletedFiles: string[] = [];
   const deletedDirs: string[] = [];

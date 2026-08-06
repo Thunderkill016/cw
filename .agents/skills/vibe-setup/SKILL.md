@@ -1,6 +1,6 @@
 ---
 name: vibe-setup
-description: Help a new user configure CycleWarden env, pick a preset, and verify doctor + dev server.
+description: Help a new user configure Atoryn Forge env, pick a preset, and verify doctor + dev server.
 ---
 
 # Skill: vibe-setup

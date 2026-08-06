@@ -6,8 +6,8 @@ import type { CliOutput } from "./index.js";
 import { green } from "./index.js";
 import { formatSlsaProvenance } from "../core/slsa.js";
 import { computeMerkleRoot, type MerkleEntry } from "../core/merkle.js";
+import { resolveStateRoot, resolveTasksDir } from "../store/runtime-paths.js";
 
-const CW_STATE_DIR = ".cw";
 
 export async function runExport(argv: string[], io: CliOutput): Promise<number> {
   const { values: options } = parseArgs({
@@ -15,13 +15,16 @@ export async function runExport(argv: string[], io: CliOutput): Promise<number> 
     options: {
       out: { type: "string" },
       slsa: { type: "boolean" },
+      "project-root": { type: "string" },
+      root: { type: "string" },
     },
     strict: true,
   });
 
-  const projectRoot = process.cwd();
-  const tasksDir = resolve(projectRoot, CW_STATE_DIR, "tasks");
-  const outFile = resolve(projectRoot, options.out ?? ".cw-evidence-bundle.json");
+  const projectRoot = resolve(options["project-root"] ?? process.cwd());
+  const stateRoot = resolveStateRoot(projectRoot, options.root);
+  const tasksDir = resolveTasksDir(stateRoot);
+  const outFile = resolve(projectRoot, options.out ?? "forge-evidence-bundle.json");
 
   let taskIds: string[] = [];
   try {
@@ -49,7 +52,7 @@ export async function runExport(argv: string[], io: CliOutput): Promise<number> 
         if (!entry.isFile()) continue;
 
         const filePath = join(taskPath, entry.name);
-        const relPath = relative(resolve(projectRoot, CW_STATE_DIR), filePath).split("\\").join("/");
+        const relPath = relative(stateRoot, filePath).split("\\").join("/");
         const content = await readFile(filePath, "utf8");
         const hash = createHash("sha256").update(content).digest("hex");
 

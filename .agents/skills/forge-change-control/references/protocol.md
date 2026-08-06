@@ -1,6 +1,6 @@
 # Change-control protocol v1
 
-CycleWarden coordinates agents; it does not replace their semantic reasoning.
+Atoryn Forge coordinates agents; it does not replace their semantic reasoning.
 All JSON fields are strict. Unknown fields, missing criteria, digest mismatch,
 dirty checkout state, unsupported symlink/submodule changes, or ambiguous
 provenance fail closed.
@@ -145,5 +145,5 @@ For product evaluation, compare similar tasks and record:
 - preparation, implementation, review, and verification time;
 - deterministic check pass rate and evidence completeness.
 
-These measurements test whether CycleWarden amplifies useful agent performance;
+These measurements test whether Atoryn Forge amplifies useful agent performance;
 the number of model calls alone is not evidence of improvement.

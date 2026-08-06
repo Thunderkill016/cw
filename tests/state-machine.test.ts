@@ -21,6 +21,17 @@ describe("isValidTransition", () => {
     expect(isValidTransition("verifying", "implementing")).toBe(true);
   });
 
+  it("allows verification to start without an observed implementing step", () => {
+    // CW never observes the agent writing code, so a task can go straight from
+    // prepared (or from a rejected attempt) into verifying.
+    expect(isValidTransition("prepared", "verifying")).toBe(true);
+    expect(isValidTransition("rejected", "verifying")).toBe(true);
+  });
+
+  it("allows a rejected attempt to re-enter the fix-and-reverify loop", () => {
+    expect(isValidTransition("rejected", "implementing")).toBe(true);
+  });
+
   it("blocks backward and illegal transitions", () => {
     expect(isValidTransition("accepted", "draft")).toBe(false);
     expect(isValidTransition("accepted", "rejected")).toBe(false);
@@ -49,7 +60,7 @@ describe("advanceState", () => {
 
   it("throws StateMachineError on invalid transition", () => {
     expect(() => advanceState("accepted", "draft")).toThrow(StateMachineError);
-    expect(() => advanceState("rejected", "implementing")).toThrow(StateMachineError);
+    expect(() => advanceState("accepted", "verifying")).toThrow(StateMachineError);
     expect(() => advanceState("draft", "accepted")).toThrow(StateMachineError);
   });
 
@@ -66,9 +77,11 @@ describe("advanceState", () => {
 });
 
 describe("isTerminalState", () => {
-  it("identifies accepted and rejected as terminal", () => {
+  it("identifies accepted as the only terminal state", () => {
+    // A rejected attempt is not the end of the task: it must be able to re-enter
+    // the fix-and-reverify loop, so it has outgoing transitions and is not terminal.
     expect(isTerminalState("accepted")).toBe(true);
-    expect(isTerminalState("rejected")).toBe(true);
+    expect(isTerminalState("rejected")).toBe(false);
   });
 
   it("identifies non-terminal states correctly", () => {

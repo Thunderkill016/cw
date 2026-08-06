@@ -13,13 +13,22 @@ export class StateMachineError extends Error {
   }
 }
 
+/**
+ * CW never observes the agent writing code, so `implementing` is a state the
+ * task is placed *back* into when a verification does not accept the attempt —
+ * it is not a state CW can watch a task enter.
+ *
+ * `accepted` is the only truly terminal state: a task that has been accepted is
+ * closed. `rejected` is a verdict on one attempt, not the death of the task, so
+ * it must lead back into the fix-and-reverify loop that is CW's core workflow.
+ */
 const VALID_TRANSITIONS: Record<TaskState, TaskState[]> = {
   draft: ["prepared"],
-  prepared: ["implementing", "rejected"],
+  prepared: ["implementing", "verifying", "rejected"],
   implementing: ["verifying"],
   verifying: ["accepted", "rejected", "implementing"],
   accepted: [],
-  rejected: [],
+  rejected: ["implementing", "verifying"],
 };
 
 export function isValidTransition(from: TaskState, to: TaskState): boolean {
@@ -35,6 +44,10 @@ export function advanceState(currentState: TaskState, nextState: TaskState): Tas
   return nextState;
 }
 
+/**
+ * Derived from the transition table so it cannot drift from it: a state is
+ * terminal exactly when no transition leads out of it.
+ */
 export function isTerminalState(state: TaskState): boolean {
-  return state === "accepted" || state === "rejected";
+  return (VALID_TRANSITIONS[state]?.length ?? 0) === 0;
 }

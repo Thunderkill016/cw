@@ -1,4 +1,4 @@
-name: CW Verify
+name: Forge Verify
 
 on:
   workflow_call:
@@ -21,8 +21,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Run CW Verify
-        uses: Thunderkill016/cw/.github/actions/cw-verify@main
+      - name: Run Forge Verify
+        uses: Thunderkill016/atoryn-forge/.github/actions/forge-verify@main
         with:
           contract-path: ${{ inputs.contract-path }}
           fail-on-inconclusive: ${{ inputs.fail-on-inconclusive }}

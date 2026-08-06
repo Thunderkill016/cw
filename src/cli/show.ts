@@ -2,7 +2,7 @@ import { readFile, stat } from "node:fs/promises";
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { parseTaskContract } from "../core/contract.js";
-import { verificationEvidenceDigest } from "../core/verification.js";
+import { verificationEvidenceDigestMatches } from "../core/verification.js";
 import { canonicalJsonDocument } from "../core/integrity.js";
 import type { VerificationEvidenceV1 } from "../core/verification.js";
 import type { CliOutput } from "./index.js";
@@ -31,7 +31,7 @@ function validateEvidenceForShow(value: unknown): VerificationEvidenceV1 {
   ) {
     throw new Error("unsupported verification evidence record");
   }
-  if (verificationEvidenceDigest(record as VerificationEvidenceV1) !== record.evidenceDigest) {
+  if (!verificationEvidenceDigestMatches(record as VerificationEvidenceV1)) {
     throw new Error("verification evidence digest mismatch");
   }
   return record as VerificationEvidenceV1;

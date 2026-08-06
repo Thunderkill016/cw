@@ -1,6 +1,6 @@
 ---
 name: ship-feature
-description: Implement the next MVP product feature from IDEA.md under /app using CycleWarden ports and conventions.
+description: Implement the next MVP product feature from IDEA.md under /app using Atoryn Forge ports and conventions.
 ---
 
 # Skill: ship-feature

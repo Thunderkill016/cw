@@ -29,11 +29,14 @@ import {
   type TaskContractV1,
   type TaskPathRule,
 } from "./contract.js";
-
-const CHANGE_SET_DIGEST_DOMAIN = "cyclewarden.change-set.v1";
-const COMMAND_DIGEST_DOMAIN = "cyclewarden.verification-command.v1";
-const EVIDENCE_ID_DOMAIN = "cyclewarden.verification-evidence-id.v1";
-const EVIDENCE_DIGEST_DOMAIN = "cyclewarden.verification-evidence.v1";
+import {
+  CHANGE_SET_DIGEST_DOMAIN,
+  COMMAND_DIGEST_DOMAIN,
+  EVIDENCE_DIGEST_DOMAIN,
+  EVIDENCE_ID_DOMAIN,
+  LEGACY_EVIDENCE_DIGEST_DOMAINS,
+  digestMatchesAnyDomain,
+} from "./digest-domains.js";
 
 export class ChangeVerificationError extends Error {
   constructor(message: string) {
@@ -238,6 +241,19 @@ export function verificationEvidenceDigest(
   evidence: Omit<VerificationEvidenceV1, "evidenceDigest"> | VerificationEvidenceV1
 ): string {
   return digestCanonicalJson(EVIDENCE_DIGEST_DOMAIN, evidencePayload(evidence));
+}
+
+/**
+ * Checks a stored evidence record against its own digest, accepting records
+ * issued before the Atoryn Forge rename under the CycleWarden domain.
+ */
+export function verificationEvidenceDigestMatches(evidence: VerificationEvidenceV1): boolean {
+  return digestMatchesAnyDomain(
+    EVIDENCE_DIGEST_DOMAIN,
+    LEGACY_EVIDENCE_DIGEST_DOMAINS,
+    evidencePayload(evidence),
+    evidence.evidenceDigest
+  );
 }
 
 export type VerifyChangeInput = {

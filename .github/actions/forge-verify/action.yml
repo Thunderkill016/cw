@@ -1,5 +1,5 @@
-name: 'CW Verify'
-description: 'Verifies an AI implementation using CW'
+name: 'Forge Verify'
+description: 'Verifies an AI implementation against its task contract using Atoryn Forge'
 inputs:
   contract-path:
     description: 'Path to the contract JSON'
@@ -25,17 +25,16 @@ runs:
       with:
         node-version: 20
 
-    - name: Run CW Verify
-      id: cw-verify
+    - name: Run Forge Verify
+      id: forge-verify
       shell: bash
       run: |
         set +e
-        npx cw verify --contract "${{ inputs.contract-path }}" \
+        npx atoryn-forge verify --contract "${{ inputs.contract-path }}" \
           --implementer-provider "${{ inputs.implementer-provider }}" \
           --implementer-run "${{ inputs.implementer-run }}" \
           --trusted-repository \
-          --json > cw-result.json
-        
+          --json > forge-result.json
         EXIT_CODE=$?
         set -e
         echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
@@ -46,35 +45,36 @@ runs:
       with:
         script: |
           const fs = require('fs');
-          if (!fs.existsSync('cw-result.json')) {
-            console.log('No cw-result.json found.');
+          if (!fs.existsSync('forge-result.json')) {
+            console.log('No forge-result.json found.');
             return;
           }
-          
+
           try {
-            const result = JSON.parse(fs.readFileSync('cw-result.json', 'utf8'));
+            const result = JSON.parse(fs.readFileSync('forge-result.json', 'utf8'));
             const evidence = result.evidence;
             if (!evidence) return;
-            
+
             let verdictIcon = '❔';
             if (evidence.verdict === 'accepted') verdictIcon = '✅';
             if (evidence.verdict === 'rejected') verdictIcon = '❌';
-            
+
             const checksPassed = evidence.checks.length;
             const risksCount = evidence.unresolvedRisks ? evidence.unresolvedRisks.length : 0;
-            
-            const body = `## CW Verification Result ${verdictIcon}
-            
+
+            const body = `## Forge Verification Result ${verdictIcon}
+
             **Verdict:** \`${evidence.verdict.toUpperCase()}\`
-            
-            - **Task ID:** \`${evidence.subject.taskId || 'Unknown'}\`
+
+            - **Task ID:** \`${evidence.taskId}\`
+            - **Task State:** \`${result.state ?? 'unknown'}\`
             - **Scope Status:** \`${evidence.scope.status}\`
             - **Changes:** ${evidence.subject.changes.length} files modified
             - **Checks:** ${checksPassed} passed
             - **Risks:** ${risksCount} unresolved
-            
-            *Verified by Cyclewarden (cw)*`;
-            
+
+            *Verified by Atoryn Forge*`;
+
             await github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
@@ -88,17 +88,17 @@ runs:
     - name: Evaluate Outcome
       shell: bash
       run: |
-        EXIT_CODE="${{ steps.cw-verify.outputs.exit_code }}"
+        EXIT_CODE="${{ steps.forge-verify.outputs.exit_code }}"
         if [ "$EXIT_CODE" -eq 2 ]; then
-          echo "CW Verification REJECTED."
+          echo "Forge verification REJECTED."
           exit 1
         elif [ "$EXIT_CODE" -eq 3 ] && [ "${{ inputs.fail-on-inconclusive }}" = "true" ]; then
-          echo "CW Verification INCONCLUSIVE."
+          echo "Forge verification INCONCLUSIVE."
           exit 1
         elif [ "$EXIT_CODE" -eq 0 ] || [ "$EXIT_CODE" -eq 3 ]; then
-          echo "CW Verification passed or inconclusive (allowed)."
+          echo "Forge verification passed or inconclusive (allowed)."
           exit 0
         else
-          echo "CW CLI failed with exit code $EXIT_CODE."
+          echo "Forge CLI failed with exit code $EXIT_CODE."
           exit 1
         fi

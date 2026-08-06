@@ -55,7 +55,7 @@ describe("CLI Doctor", () => {
   it("doctor reports git version correctly and missing cw state", async () => {
     const root = await createRepository("basic");
     const res = await runCli(root, ["doctor", "--json"]);
-    expect(res.code).toBe(1); // missing .cw/
+    expect(res.code).toBe(1); // missing .forge/
     const data = JSON.parse(res.stdout);
     
     const gitCheck = data.checks.find((c: any) => c.name === "Git installed");
@@ -81,7 +81,7 @@ describe("CLI Doctor", () => {
 
   it("doctor succeeds when all checks pass", async () => {
     const root = await createRepository("success");
-    await runCli(root, ["init", "--json"]); // creates .cw
+    await runCli(root, ["init", "--json"]); // creates .forge
     await writeFile(join(root, "package.json"), JSON.stringify({ scripts: { test: "echo test" } }), "utf8");
     await writeFile(join(root, "package-lock.json"), "{}", "utf8");
     

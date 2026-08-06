@@ -1,15 +1,15 @@
 {
-  "name": "cw",
-  "version": "0.2.0",
-  "description": "Deterministic contracts and independent verification for AI-assisted code changes",
+  "name": "atoryn-forge",
+  "version": "0.3.0",
+  "description": "Atoryn Forge — deterministic contracts, task lifecycle and independent verification for AI-assisted code changes",
   "license": "MIT",
   "type": "module",
   "engines": {
     "node": ">=20"
   },
   "bin": {
-    "cw": "./dist/cli/index.js",
-    "cyclewarden": "./dist/cli/index.js"
+    "forge": "./dist/cli/index.js",
+    "cw": "./dist/cli/index.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -38,15 +38,17 @@
     "cli",
     "deterministic",
     "contracts",
-    "guardrails"
+    "guardrails",
+    "atoryn",
+    "forge"
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Thunderkill016/cw.git"
+    "url": "git+https://github.com/Thunderkill016/atoryn-forge.git"
   },
-  "homepage": "https://github.com/Thunderkill016/cw#readme",
+  "homepage": "https://github.com/Thunderkill016/atoryn-forge#readme",
   "bugs": {
-    "url": "https://github.com/Thunderkill016/cw/issues"
+    "url": "https://github.com/Thunderkill016/atoryn-forge/issues"
   },
   "scripts": {
     "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",

@@ -10,8 +10,11 @@ import {
   type GitObjectFormat,
 } from "../git/git-change.js";
 import { digestCanonicalJson } from "./integrity.js";
-
-const CONTRACT_DIGEST_DOMAIN = "cyclewarden.task-contract.v1";
+import {
+  CONTRACT_DIGEST_DOMAIN,
+  LEGACY_CONTRACT_DIGEST_DOMAINS,
+  digestMatchesAnyDomain,
+} from "./digest-domains.js";
 
 export class TaskContractError extends Error {
   constructor(message: string) {
@@ -364,7 +367,16 @@ export function parseTaskContract(value: unknown): TaskContractV1 {
       /^[a-f0-9]{64}$/
     ),
   };
-  if (taskContractDigest(contract) !== contract.contractDigest) {
+  // Accept contracts issued before the Atoryn Forge rename: their digest was
+  // computed under the CycleWarden domain over an otherwise identical payload.
+  if (
+    !digestMatchesAnyDomain(
+      CONTRACT_DIGEST_DOMAIN,
+      LEGACY_CONTRACT_DIGEST_DOMAINS,
+      contractPayload(contract),
+      contract.contractDigest
+    )
+  ) {
     throw new TaskContractError("task contract digest mismatch");
   }
   return contract;

@@ -4,11 +4,17 @@ import { dirname, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { prepareTaskContract } from "../core/contract.js";
 import { canonicalJsonDocument } from "../core/integrity.js";
+import {
+  appendTaskEvent,
+  createTaskJournal,
+  taskEventId,
+} from "../core/task-journal.js";
+import { readTaskJournal, writeTaskJournal } from "../store/persistence.js";
+import { resolveStateRoot } from "../store/runtime-paths.js";
 import type { CliOutput } from "./index.js";
 import { bold, green } from "./index.js";
 
 const MAX_INPUT_BYTES = 10 * 1024 * 1024;
-const CW_STATE_DIR = ".cw";
 
 
 
@@ -68,9 +74,9 @@ export async function runPrepare(argv: string[], io: CliOutput): Promise<number>
   if (!specPath) throw new Error("--spec <draft.json> is required");
 
   const projectRoot = resolve(options["project-root"] ?? process.cwd());
-  const stateDir = resolve(projectRoot, options.root ?? CW_STATE_DIR);
+  const stateDir = resolveStateRoot(projectRoot, options.root);
   const baseRef = options.base?.trim() || "HEAD";
-  const actor = options.actor?.trim() || "cw-preparer";
+  const actor = options.actor?.trim() || "forge-preparer";
 
   const draft = await readJson(resolve(projectRoot, specPath));
 
@@ -88,13 +94,34 @@ export async function runPrepare(argv: string[], io: CliOutput): Promise<number>
 
   await writeJsonExclusive(outPath, contract);
 
+  // Record the lifecycle event only after the contract is durably on disk, so a
+  // journal can never claim a contract that does not exist. The event id is
+  // derived from the contract digest, so re-running prepare over an identical
+  // contract is idempotent rather than appending a duplicate.
+  const existingJournal =
+    (await readTaskJournal(stateDir, contract.taskId)) ?? createTaskJournal(contract.taskId);
+  const journal = appendTaskEvent(
+    existingJournal,
+    taskEventId(contract.taskId, "contract-prepared", contract.contractDigest),
+    {
+      eventType: "contract-prepared",
+      toState: "prepared",
+      payloadDigest: contract.contractDigest,
+      actor,
+      source: "forge prepare",
+      correlationId: null,
+    }
+  );
+  const journalPath = await writeTaskJournal(stateDir, journal);
+
   if (jsonMode) {
-    io.stdout(canonicalJsonDocument({ path: outPath, contract }));
+    io.stdout(canonicalJsonDocument({ path: outPath, journalPath, contract, state: journal.state }));
   } else {
     io.stdout(`${green("✓")} Contract prepared: ${bold(contract.taskId)}\n`);
     io.stdout(`  Objective: ${contract.objective}\n`);
     io.stdout(`  Base: ${contract.repository.baseSha.slice(0, 12)}\n`);
     io.stdout(`  Digest: ${contract.contractDigest.slice(0, 16)}…\n`);
+    io.stdout(`  State: ${journal.state}\n`);
     io.stdout(`  Saved: ${outPath}\n`);
   }
 

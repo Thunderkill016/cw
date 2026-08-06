@@ -17,45 +17,49 @@ import { runMap } from "./map.js";
 import { runProvenance } from "./provenance.js";
 import { runAudit } from "./audit.js";
 
-const VERSION = "0.2.0";
+const VERSION = "0.3.0";
 
-const HELP = `cw — Deterministic contracts and independent verification for AI-assisted code changes
+const HELP = `forge — Atoryn Forge: deterministic contracts, task lifecycle and independent
+        verification for AI-assisted code changes
 
 Usage:
-  cw init                              Initialize CW in the current project (use --auto to detect project type)
-  cw doctor                            Check environment health and dependencies
-  cw prepare --spec <draft.json>       Create a deterministic task contract
-  cw verify  --contract <contract.json> Verify an AI implementation against contract
-  cw show    --file <record.json>      Inspect a contract or evidence record
-  cw diff    --contract <contract.json> Evaluate Git tree changes against baseSha
-  cw map                               Generate a context map of repository symbols
-  cw list                              List all task contracts and verifications
-  cw report                            Generate a compliance report of all tasks
-  cw export                            Export contracts and evidence to a bundle
-  cw status                            Show a dashboard of tasks and their state
-  cw clean                             Clean temporary files and rejected runs
-  cw provenance                        Manage AI provenance records
-  cw audit                             Manage cryptographic audit log
-  cw help                              Show this help message
-  cw version                           Show version
+  forge init                              Initialize Forge in the current project (use --auto to detect project type)
+  forge doctor                            Check environment health and dependencies
+  forge prepare --spec <draft.json>       Create a deterministic task contract
+  forge verify  --contract <contract.json> Verify an AI implementation against contract
+  forge show    --file <record.json>      Inspect a contract or evidence record
+  forge diff    --contract <contract.json> Evaluate Git tree changes against baseSha
+  forge map                               Generate a context map of repository symbols
+  forge list                              List all task contracts, states and verifications
+  forge report                            Generate a compliance report of all tasks
+  forge export                            Export contracts and evidence to a bundle
+  forge status                            Show a dashboard of tasks and their lifecycle state
+  forge clean                             Clean temporary files and rejected runs
+  forge provenance                        Manage AI provenance records
+  forge audit                             Inspect and verify the task lifecycle journals
+  forge help                              Show this help message
+  forge version                           Show version
 
 Options:
   --json          Machine-readable JSON output
   --project-root  Project root directory (default: cwd)
-  --root          CW state directory (default: .cw)
+  --root          Forge state directory (default: .forge, or an existing .cw)
 
 Examples:
-  $ cw init
-  $ cw prepare --spec task.json
-  $ cw verify --contract .cw/tasks/my-task/contract.json \\
-              --implementer-provider cursor --implementer-run session-123 \\
-              --trusted-repository
-  $ cw show --file .cw/tasks/my-task/contract.json
+  $ forge init
+  $ forge prepare --spec task.json
+  $ forge verify --contract .forge/tasks/my-task/contract.json \\
+                 --implementer-provider cursor --implementer-run session-123 \\
+                 --trusted-repository
+  $ forge status
+  $ forge audit verify
 
 Exit codes for verify:
   0  accepted
   2  rejected
   3  inconclusive
+
+The 'cw' command is kept as an alias of 'forge'.
 `;
 
 function bold(text: string): string {
@@ -100,7 +104,7 @@ async function main(): Promise<number> {
   }
 
   if (command === "version" || command === "--version" || command === "-v") {
-    io.stdout(`cw ${VERSION}\n`);
+    io.stdout(`atoryn-forge ${VERSION}\n`);
     return 0;
   }
 
@@ -140,7 +144,7 @@ async function main(): Promise<number> {
         return await runAudit(commandArgs, io);
       default:
         io.stderr(`${red("Error:")} Unknown command: ${command}\n`);
-        io.stderr(`Run ${bold("cw help")} for usage information.\n`);
+        io.stderr(`Run ${bold("forge help")} for usage information.\n`);
         return 1;
     }
   } catch (error) {

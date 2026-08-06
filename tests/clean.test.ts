@@ -6,7 +6,7 @@ import { randomUUID } from "node:crypto";
 import type { CliOutput } from "../src/cli/index.js";
 
 describe("cw clean", () => {
-  const testRoot = resolve(process.cwd(), ".cw-test-clean-" + randomUUID());
+  const testRoot = resolve(process.cwd(), ".forge-test-clean-" + randomUUID());
   
   let stdout = "";
   let stderr = "";

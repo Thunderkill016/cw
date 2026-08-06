@@ -10,7 +10,7 @@ describe("cw report subcommand", () => {
 
   beforeEach(async () => {
     projectRoot = await mkdtemp(join(tmpdir(), "cw-report-test-"));
-    const tasksDir = join(projectRoot, ".cw", "tasks", "task-1");
+    const tasksDir = join(projectRoot, ".forge", "tasks", "task-1");
     await mkdir(tasksDir, { recursive: true });
 
     // Mock contract

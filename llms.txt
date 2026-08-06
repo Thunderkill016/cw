@@ -1,17 +1,19 @@
-# cw - Deterministic AI Task Contracts
+# Atoryn Forge - Deterministic AI Task Contracts
 
 > A zero-dependency CLI for independent verification of AI-assisted code changes.
 
 This file provides context for LLMs interacting with this repository.
 
 ## Overview
-`cw` (CycleWarden) is a governance tool that allows developers to define cryptographic "task contracts" detailing exactly what an AI agent is allowed to modify in a repository. After the AI completes its work, `cw` independently verifies the Git tree to ensure the agent stayed within scope and passed local sandbox tests.
+Atoryn Forge (package `atoryn-forge`, CLI `forge`, legacy alias `cw`) is a governance tool that allows developers to define digest-bound "task contracts" detailing exactly what an AI agent is allowed to modify in a repository. After the AI completes its work, Forge independently verifies the Git tree to ensure the agent stayed within scope and passed local sandbox tests, and records every lifecycle transition in a hash-chained task journal.
+
+Forge was previously published as `cw` / CycleWarden. Legacy compatibility is deliberate and documented in README.md.
 
 ## Repository Structure
-- `src/cli/`: The CLI entry points (`init`, `prepare`, `verify`, `show`).
-- `src/core/`: The cryptographic logic and bounded verification engine.
+- `src/cli/`: The CLI entry points (`init`, `prepare`, `verify`, `show`, `status`, `audit`, ...).
+- `src/core/`: The domain logic, digest integrity and bounded verification engine.
 - `src/git/`: Git object parsing, tree resolution, and diffing.
-- `src/store/`: Local filesystem state management (`.cw/`).
+- `src/store/`: Local filesystem state management (`.forge/`, legacy `.cw/`).
 - `tests/`: Vitest testing suites for the core modules.
 - `dist/`: Compiled ESM output.
 
@@ -19,11 +21,15 @@ This file provides context for LLMs interacting with this repository.
 1. **Task Contract** (`src/core/contract.ts`): A JSON spec bound to a `baseSha` (Git commit) and hashed (`contractDigest`).
 2. **Change Verification** (`src/core/verification.ts`): Compares `HEAD` against `baseSha` to ensure modified files match `allowedPaths` and do not touch `forbiddenPaths`.
 3. **Bounded Command** (`src/core/bounded-command.ts`): Executes verification scripts (e.g. `npm test`) with strict timeouts and output limits.
-4. **Evidence** (`src/core/evidence.ts`): Emits a signed `verification-*.json` file summarizing the outcome (Accepted, Rejected, Inconclusive).
+4. **Evidence** (`src/core/evidence.ts`): Emits a `verification-*.json` file summarizing the outcome (accepted, rejected, inconclusive).
+5. **Task Journal** (`src/core/task-journal.ts`): The durable, hash-chained lifecycle. `prepare` and `verify` append events; `status`, `list` and `audit` read them. Transitions are enforced by `src/core/state-machine.ts`.
+6. **Digest Domains** (`src/core/digest-domains.ts`): The single place every digest domain separator is declared. New digests are issued under `atoryn.forge.*.v2`; the `cyclewarden.*.v1` domains are accepted on the read path only.
+7. **Runtime Paths** (`src/store/runtime-paths.ts`): The single source of truth for where state lives. No command may hard-code a state directory literal.
 
 ## Important Links & Files
 - [CLI Entry Point](src/cli/index.ts)
 - [Verification Engine](src/core/verification.ts)
+- [Task Journal](src/core/task-journal.ts)
 - [Public SDK Exports](src/index.ts)
 
-If you are an AI assistant helping a user develop this repository, prioritize reading `AGENTS.md` for strict coding guidelines and `src/core/verification.ts` to understand the domain logic.
+If you are an AI assistant helping a user develop this repository, prioritize reading `AGENTS.md` for strict coding guidelines, `src/core/verification.ts` for the verification domain logic, and `src/core/task-journal.ts` for the lifecycle model.

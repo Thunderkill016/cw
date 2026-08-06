@@ -20,7 +20,13 @@ export type {
   PrepareTaskContractInput,
 } from "./core/contract.js";
 
-export { verifyChange, verificationEvidenceDigest, scopeViolations, parseRawGitChanges } from "./core/verification.js";
+export {
+  verifyChange,
+  verificationEvidenceDigest,
+  verificationEvidenceDigestMatches,
+  scopeViolations,
+  parseRawGitChanges,
+} from "./core/verification.js";
 export { formatSlsaProvenance } from "./core/slsa.js";
 export type {
   VerifyChangeInput,
@@ -74,7 +80,13 @@ export {
 } from "./git/git-change.js";
 export type { GitObjectFormat } from "./git/git-change.js";
 
-export { resolveDefaultStateRoot } from "./store/runtime-paths.js";
+export {
+  resolveDefaultStateRoot,
+  resolveStateRoot,
+  resolveTasksDir,
+  FORGE_STATE_DIRECTORY,
+  LEGACY_CW_STATE_DIRECTORY,
+} from "./store/runtime-paths.js";
 
 export {
   isValidTransition,
@@ -86,10 +98,39 @@ export type { TaskState } from "./core/state-machine.js";
 
 export {
   writeAtomicJson,
-  resolveCycleStateDir,
-  persistCycleMetadata,
+  resolveTaskStateDir,
+  resolveTaskJournalPath,
+  readTaskJournal,
+  writeTaskJournal,
+  ensureTaskJournal,
   PersistenceError,
 } from "./store/persistence.js";
+
+export {
+  createTaskJournal,
+  appendTaskEvent,
+  verifyTaskJournal,
+  parseTaskJournal,
+  taskEventId,
+  TaskJournalError,
+  TASK_EVENT_TYPES,
+} from "./core/task-journal.js";
+export type {
+  TaskJournalV1,
+  TaskJournalEvent,
+  TaskJournalIntegrity,
+  TaskEventType,
+  AppendTaskEventInput,
+} from "./core/task-journal.js";
+
+export {
+  CONTRACT_DIGEST_DOMAIN,
+  ASSESSMENT_DIGEST_DOMAIN,
+  EVIDENCE_DIGEST_DOMAIN,
+  LEGACY_CONTRACT_DIGEST_DOMAINS,
+  LEGACY_EVIDENCE_DIGEST_DOMAINS,
+  digestMatchesAnyDomain,
+} from "./core/digest-domains.js";
 
 export { buildMerkleTree, computeMerkleRoot, generateMerkleProof, verifyMerkleProof } from "./core/merkle.js";
 export type { MerkleEntry, MerkleProofNode } from "./core/merkle.js";

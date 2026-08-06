@@ -1,12 +1,12 @@
 ---
-name: cyclewarden-change-control
-description: Prepare, implement, independently review, and deterministically verify an AI-authored repository change with CycleWarden. Use for non-trivial coding or documentation changes where exact Git scope, explicit acceptance criteria, separate agent runs, and durable evidence matter.
+name: forge-change-control
+description: Prepare, implement, independently review, and deterministically verify an AI-authored repository change with Atoryn Forge. Use for non-trivial coding or documentation changes where exact Git scope, explicit acceptance criteria, separate agent runs, and durable evidence matter.
 ---
 
-# CycleWarden change control
+# Atoryn Forge change control
 
-Use CycleWarden as a coordination and evidence layer around capable agents. The
-model still performs implementation and semantic review; CycleWarden binds those
+Use Atoryn Forge as a coordination and evidence layer around capable agents. The
+model still performs implementation and semantic review; Atoryn Forge binds those
 judgments to a strict task contract, an exact Git change, and reproducible checks.
 
 Read [references/protocol.md](references/protocol.md) before creating an artifact.
@@ -35,7 +35,7 @@ Read [references/protocol.md](references/protocol.md) before creating an artifac
 5. Run:
 
    ```text
-   pnpm cw -- prepare \
+   pnpm forge -- prepare \
      --spec .cyclewarden/tasks/<task-id>/draft.json \
      --actor <provider>:<preparation-run-id>
    ```
@@ -78,7 +78,7 @@ provider is acceptable only when the reviewer has a distinct run ID.
 5. Run:
 
    ```text
-   pnpm cw -- verify \
+   pnpm forge -- verify \
      --contract .cyclewarden/tasks/<task-id>/contract.json \
      --assessment .cyclewarden/tasks/<task-id>/assessment-<head-prefix>.json \
      --implementer-provider <provider> \
@@ -98,4 +98,4 @@ provider is acceptable only when the reviewer has a distinct run ID.
 Report the contract digest, base and head SHAs, implementer and verifier run IDs,
 verdict, checks, findings, residual limitations, and evidence path. Also record
 review defects caught, false positives, and time overhead when evaluating
-whether CycleWarden improved results over direct AI use.
+whether Atoryn Forge improved results over direct AI use.

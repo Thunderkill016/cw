@@ -1,6 +1,6 @@
 ---
 name: security-pass
-description: Audit CycleWarden app changes against ASVS-oriented baseline and PRODUCTION_CHECKLIST.md.
+description: Audit Atoryn Forge app changes against ASVS-oriented baseline and PRODUCTION_CHECKLIST.md.
 ---
 
 # Skill: security-pass

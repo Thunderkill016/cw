@@ -14,6 +14,7 @@ export interface RepoMapResult {
 const EXCLUDE_DIRS = new Set([
   "node_modules",
   ".git",
+  ".forge",
   ".cw",
   "dist",
   "build",

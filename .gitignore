@@ -1,8 +1,10 @@
 node_modules/
 dist/
 *.tgz
+.forge/
 .cw/
 .cyclewarden/
+forge-evidence-bundle.json
 .env
 .env.*
 !.env.example

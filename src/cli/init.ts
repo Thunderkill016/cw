@@ -1,11 +1,11 @@
 import { mkdir, writeFile, readFile, stat } from "node:fs/promises";
-import { resolve, join } from "node:path";
+import { resolve, join, relative } from "node:path";
 import { parseArgs } from "node:util";
 import type { CliOutput } from "./index.js";
 import { bold, green, red } from "./index.js";
+import { resolveStateRoot } from "../store/runtime-paths.js";
 import { existsSync } from "node:fs";
 
-const CW_STATE_DIR = ".cw";
 
 async function detectProjectType(projectRoot: string): Promise<string | null> {
   if (existsSync(join(projectRoot, "package.json"))) return "node";
@@ -131,13 +131,15 @@ export async function runInit(argv: string[], io: CliOutput): Promise<number> {
       json: { type: "boolean" },
       template: { type: "string" },
       auto: { type: "boolean" },
+      "project-root": { type: "string" },
+      root: { type: "string" },
     },
     strict: true,
   });
 
   const jsonMode = options.json ?? false;
-  const projectRoot = process.cwd();
-  const stateDir = resolve(projectRoot, CW_STATE_DIR);
+  const projectRoot = resolve(options["project-root"] ?? process.cwd());
+  const stateDir = resolveStateRoot(projectRoot, options.root);
 
   let templatePath = "";
   let detectedType = "";
@@ -181,7 +183,7 @@ export async function runInit(argv: string[], io: CliOutput): Promise<number> {
   if (jsonMode) {
     io.stdout(JSON.stringify({ initialized: true, stateDir, template: (options.template || options.auto) ? templatePath : null }, null, 2) + "\n");
   } else {
-    io.stdout(`${green("✓")} Initialized CW in ${bold(stateDir)}\n`);
+    io.stdout(`${green("✓")} Initialized Atoryn Forge in ${bold(stateDir)}\n`);
     if (options.auto) {
       io.stdout(`${green("✓")} Auto-detected project type: ${bold(detectedType)}\n`);
       io.stdout(`${green("✓")} Auto-detected test runner: ${bold(detectedRunner)}\n`);
@@ -192,11 +194,11 @@ export async function runInit(argv: string[], io: CliOutput): Promise<number> {
     }
     io.stdout(`\n`);
     io.stdout(`Next steps:\n`);
-    io.stdout(`  1. Create a task spec:  ${bold("cw prepare --spec task.json")}\n`);
+    io.stdout(`  1. Create a task spec:  ${bold("forge prepare --spec task.json")}\n`);
     io.stdout(`  2. Let your AI agent implement the task\n`);
-    io.stdout(`  3. Verify the result:   ${bold("cw verify --contract .cw/tasks/<id>/contract.json")}\n`);
+    io.stdout(`  3. Verify the result:   ${bold(`forge verify --contract ${relative(projectRoot, stateDir)}/tasks/<id>/contract.json`)}\n`);
     io.stdout(`\n`);
-    io.stdout(`Add ${bold(".cw/")} to your .gitignore if you don't want to track state.\n`);
+    io.stdout(`Add ${bold(`${relative(projectRoot, stateDir)}/`)} to your .gitignore if you don't want to track state.\n`);
   }
 
   return 0;

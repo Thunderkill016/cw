@@ -8,7 +8,7 @@ import { computeMerkleRoot } from "../src/core/merkle.js";
 
 describe("runExport", () => {
   const projectRoot = process.cwd();
-  const cwDir = resolve(projectRoot, ".cw");
+  const cwDir = resolve(projectRoot, ".forge");
   const tasksDir = resolve(cwDir, "tasks");
 
   let outMessages: string[] = [];
@@ -26,14 +26,14 @@ describe("runExport", () => {
   afterEach(async () => {
     await rm(cwDir, { recursive: true, force: true });
     await rm(resolve(projectRoot, "test-bundle.json"), { force: true });
-    await rm(resolve(projectRoot, ".cw-evidence-bundle.json"), { force: true });
+    await rm(resolve(projectRoot, "forge-evidence-bundle.json"), { force: true });
   });
 
   it("exports a bundle with empty tasks", async () => {
     const code = await runExport([], io);
     expect(code).toBe(0);
 
-    const bundlePath = resolve(projectRoot, ".cw-evidence-bundle.json");
+    const bundlePath = resolve(projectRoot, "forge-evidence-bundle.json");
     const bundleContent = await readFile(bundlePath, "utf8");
     const bundle = JSON.parse(bundleContent);
 

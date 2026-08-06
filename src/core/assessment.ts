@@ -1,7 +1,6 @@
 import { digestCanonicalJson } from "./integrity.js";
 import type { TaskContractV1 } from "./contract.js";
-
-const ASSESSMENT_DIGEST_DOMAIN = "cyclewarden.acceptance-assessment.v1";
+import { ASSESSMENT_DIGEST_DOMAIN } from "./digest-domains.js";
 
 export class AcceptanceAssessmentError extends Error {
   constructor(message: string) {
